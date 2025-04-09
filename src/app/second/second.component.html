@@ -1,45 +1,48 @@
 <div class="container">
-    <h1>GenLV 02</h1>
-    <form (ngSubmit)="generateResult()"
-          #form="ngForm">
-        <ng-container *ngFor="let vector of inputVectors; let i = index">
-            <label>Vector {{i}}:
-                <input required
-                       name="inputVector{{i}}"
-                       [(ngModel)]="inputVectors[i]" /></label>
-        </ng-container>
-        {{inputVectors[0]}} |||||| {{inputVectors[1]}}
-        <button type="button"
-                (click)="addVector()">Add Vector</button>
-        <label>Signature Vector:
-            <input required
-                   name="signatureVector"
-                   [(ngModel)]="signatureVector" /></label>
-        <!-- <label>
+  <h1>GenLV 02</h1>
+  <form [formGroup]="form"
+        (ngSubmit)="generateResult()">
+    <ng-container formArrayName="inputVectors">
+      <label *ngFor="let vector of inputVectors.controls; let i = index">Vector {{i + 1}}:
+        <input required
+               [formControlName]="i" /></label>
+    </ng-container>
+    <label *ngIf="inputVectors.controls.length > 2"> Combination operator <select formControlName="operation">
+        <option value="and">AND</option>
+        <option value="or">OR</option>
+      </select></label>
+    <button type="button"
+            (click)="addVector()">Add Vector</button>
+    <label>Signature Vector:
+      <input required
+             name="signatureVector"
+             formControlName="signatureVector" /></label>
+    <!-- <label>
             Merged Inputs (comma-separated indices):
             <input name="mergedInputs"
                    [(ngModel)]="mergedInputs"
                    placeholder="Enter indices e.g. 2,3" />
         </label> -->
-        <button type="submit">Generate</button>
-    </form>
-    <h2>Result</h2>
-    <p>{{ resultString }}</p>
-    <!-- <table *ngIf="resultString">
-        <tr>
-            <th>L</th>
-            <th></th>
-            <th *ngFor="let row of rowHeaders">{{ row }}</th>
-        </tr>
-        <tr>
-            <th></th>
-            <th>{{ signatureVector }}</th>
-            <th *ngFor="let col of inputVector2.split('')">{{ col }}</th>
-        </tr>
-        <tr *ngFor="let row of resultMatrix; let i = index">
-            <td style="font-weight: 600;">{{ colHeaders[i] }}</td>
-            <td style="font-weight: 600;">{{ inputVector1[i] }}</td>
-            <td *ngFor="let cell of row">{{ cell }}</td>
-        </tr>
-    </table> -->
+    <button [disabled]="form.invalid"
+            type="submit">Generate</button>
+  </form>
+  <h2>Result</h2>
+  <p>{{ resultString }}</p>
+  <table *ngIf="resultString">
+    <tr>
+      <th>L</th>
+      <th></th>
+      <th *ngFor="let row of rowHeaders">{{ row }}</th>
+    </tr>
+    <tr>
+      <th></th>
+      <th>{{ signatureVector }}</th>
+      <th *ngFor="let col of colsVector">{{ col }}</th>
+    </tr>
+    <tr *ngFor="let row of resultMatrix; let i = index">
+      <td style="font-weight: 600;">{{ colHeaders[i] }}</td>
+      <td style="font-weight: 600;">{{ rowsVector[i] }}</td>
+      <td *ngFor="let cell of row">{{ cell }}</td>
+    </tr>
+  </table>
 </div>
