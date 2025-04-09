@@ -3,26 +3,30 @@
   <form [formGroup]="form"
         (ngSubmit)="generateResult()">
     <ng-container formArrayName="inputVectors">
-      <label *ngFor="let vector of inputVectors.controls; let i = index">Vector {{i + 1}}:
-        <input required
-               [formControlName]="i" /></label>
+      <div *ngFor="let vector of inputVectors.controls; let i = index"
+           [formGroupName]="i">
+        <label>Vector {{i + 1}}:
+          <input required
+                 formControlName="vector" /></label>
+        <label *ngIf="inputVectors.controls.length > 2 && i < inputVectors.controls.length - 2"> Combination operator
+          <select formControlName="operation">
+            <option value="and">AND</option>
+            <option value="or">OR</option>
+          </select></label>
+      </div>
+
     </ng-container>
-    <label *ngIf="inputVectors.controls.length > 2"> Combination operator <select formControlName="operation">
-        <option value="and">AND</option>
-        <option value="or">OR</option>
-      </select></label>
     <button type="button"
             (click)="addVector()">Add Vector</button>
     <label>Signature Vector:
       <input required
              name="signatureVector"
              formControlName="signatureVector" /></label>
-    <!-- <label>
-            Merged Inputs (comma-separated indices):
-            <input name="mergedInputs"
-                   [(ngModel)]="mergedInputs"
-                   placeholder="Enter indices e.g. 2,3" />
-        </label> -->
+    <label>
+      Merged Inputs (comma-separated indices):
+      <input formControlName="mergedInputs"
+             placeholder="Enter indices e.g. 2,3" />
+    </label>
     <button [disabled]="form.invalid"
             type="submit">Generate</button>
   </form>
@@ -31,11 +35,11 @@
   <table *ngIf="resultString">
     <tr>
       <th>L</th>
-      <th></th>
+      <th><ng-container *ngFor="let col of rowHeaders[0].split(''); let i = index">{{colHeaders[0].length + i + 1}}</ng-container></th>
       <th *ngFor="let row of rowHeaders">{{ row }}</th>
     </tr>
     <tr>
-      <th></th>
+      <th><ng-container *ngFor="let col of colHeaders[0].split(''); let i = index">{{i + 1}}</ng-container></th>
       <th>{{ signatureVector }}</th>
       <th *ngFor="let col of colsVector">{{ col }}</th>
     </tr>
