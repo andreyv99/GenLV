@@ -1,0 +1,85 @@
+/* You can add global styles to this file, and also import other style files */
+.container {
+    min-width: 500px;
+    margin: auto;
+    text-align: center;
+    font-family: sans-serif;
+    padding: 30px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  h1 {
+    font-size: 1.5rem;
+    margin-bottom: 20px;
+  }
+  .inputs {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 20px;
+  }
+  label {
+    font-size: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-top: 10px;
+  }
+  input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 1rem;
+  }
+  button {
+    padding: 10px;
+    font-size: 1rem;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-bottom: 15px;
+    margin-top: 15px;
+  }
+  
+  button[type="button"] {
+    background: white;
+    color: black;
+    border: 1px solid black;
+    &:hover {
+        color: white;
+    }
+  }
+  
+  button:hover {
+    background: #0056b3;
+  }
+  .result {
+    margin-top: 20px;
+  }
+  .vector-output {
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin-top: 15px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+    border-radius: 5px;
+    overflow: hidden;
+  }
+  th {
+    border: 1px solid #ddd;
+    padding: 12px;
+  }
+  td {
+    padding: 12px;
+    border: 1px solid #ddd;
+    text-align: center;
+    font-size: 1rem;
+  }
+  
