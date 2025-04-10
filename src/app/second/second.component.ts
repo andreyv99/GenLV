@@ -65,7 +65,6 @@ export class SecondComponent implements OnInit {
 
             const colHeaders = this.generateBitwiseValues(rowsVector.length);
             const rowHeaders = this.generateBitwiseValues(colsVector.length);
-            console.log(rowsVector, colsVector)
             const resultMatrix = rowsVector.map((row, i) =>
                 colsVector.map((col, j) => {
                     const combinedBinaryValue = rowHeaders[i] + colHeaders[j];
