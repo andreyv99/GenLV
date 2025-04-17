@@ -18,14 +18,32 @@ export class SecondComponent implements OnInit {
     form: any;
     rowsVector: number[] = [];
     colsVector: number[] = [];
+    combinationOperators = [
+        { name: 'FALSE', value: '0000' },
+        { name: 'AND', value: '0001' },
+        { name: 'A AND NOT B', value: '0010' },
+        { name: 'A', value: '0011' },
+        { name: 'NOT A AND B', value: '0100' },
+        { name: 'B', value: '0101' },
+        { name: 'XOR', value: '0110' },
+        { name: 'OR', value: '0111' },
+        { name: 'NOR', value: '1000' },
+        { name: 'XNOR', value: '1001' },
+        { name: 'NOT B', value: '1010' },
+        { name: 'A OR NOT B', value: '1011' },
+        { name: 'NOT A', value: '1100' },
+        { name: 'NOT A OR B', value: '1101' },
+        { name: 'NAND', value: '1110' },
+        { name: 'TRUE', value: '1111' }
+    ];
 
     constructor(private fb: FormBuilder, private cdr: ChangeDetectorRef) { }
 
     ngOnInit(): void {
         this.form = this.fb.group({
             inputVectors: this.fb.array([
-                this.fb.group({ vector: '', operation: 'and' }),
-                this.fb.group({ vector: '', operation: 'and' })
+                this.fb.group({ vector: '', operation: this.combinationOperators[1].value }),
+                this.fb.group({ vector: '', operation: this.combinationOperators[1].value })
             ]),
             signatureVector: this.fb.control('', Validators.required),
             mergedInputs: this.fb.control(''),
@@ -73,7 +91,7 @@ export class SecondComponent implements OnInit {
                         return '-';
                     }
                     const index = (row << 1) | col;
-                    const signature = reduceIndex < inputVectors.length - 1 ? acc.operation === 'and' ? [0, 0, 0, 1] : [0, 1, 1, 1] : signatureArr;
+                    const signature = reduceIndex < inputVectors.length - 1 ? acc.operation.split('').map(Number) : signatureArr;
                     return signature[index] !== undefined ? signature[index] : 0;
                 })
             );
@@ -98,7 +116,7 @@ export class SecondComponent implements OnInit {
     }
 
     addVector(): void {
-        this.inputVectors.push(this.fb.group({ vector: '', operation: 'and' }));
+        this.inputVectors.push(this.fb.group({ vector: '', operation: this.combinationOperators[1].value }));
         this.cdr.detectChanges();
     }
 
