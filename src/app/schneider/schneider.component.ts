@@ -41,14 +41,14 @@ export class SchneiderComponent {
 
   addInitialGates() {
     // Add initial gates based on the image, using XNOR where appropriate
-    this.addGate('XNOR', [1, 3], 5); // Gate 5
-    this.addGate('XNOR', [2, 3], 6); // Gate 6
-    this.addGate('XNOR', [2, 4], 7); // Gate 7
-    this.addGate('XNOR', [5, 3], 8); // Gate 8
-    this.addGate('XNOR', [2, 5], 9); // Gate 9
-    this.addGate('XNOR', [1, 6], 10); // Gate 10
-    this.addGate('XNOR', [4, 6], 11); // Gate 11
-    this.addGate('XNOR', [8, 9, 10, 11], 12); // Gate Q
+    this.addGate('NOR', [1, 3], 5); // Gate 5
+    this.addGate('NOR', [2, 3], 6); // Gate 6
+    this.addGate('NOR', [2, 4], 7); // Gate 7
+    this.addGate('NOR', [5, 3], 8); // Gate 8
+    this.addGate('NOR', [2, 5], 9); // Gate 9
+    this.addGate('NOR', [1, 6], 10); // Gate 10
+    this.addGate('NOR', [4, 6], 11); // Gate 11
+    this.addGate('NOR', [8, 9, 10, 11], 12); // Gate Q
   }
 
   addGate(type: string, inputs: number[], output: number): void {
@@ -135,34 +135,50 @@ export class SchneiderComponent {
       this.signals[gate.output] = this.evaluateGate(gate.type, inputValues);
     }
 
-    // The final output is assumed to be the signal with the highest ID
-    const outputGate = this.gates.find(gate => gate.output === 12);
-    return this.signals[outputGate!.output] || 0;
+    // Dynamically determine the output gate
+    let outputGate: Gate | undefined;
+    if (this.gates.length > 0) {
+      outputGate = this.gates.reduce((prev, current) =>
+        (prev.output > current.output) ? prev : current);
+    }
+
+    return outputGate ? this.signals[outputGate.output] || 0 : 0;
   }
 
   evaluateGate(type: string, inputs: number[]): number {
+    let result: number;
     switch (type) {
       case 'AND':
-        return inputs.reduce((a, b) => a & b, 1);
+        result = inputs.reduce((a, b) => a & b, 1);
+        break;
       case 'OR':
-        return inputs.reduce((a, b) => a | b, 0);
+        result = inputs.reduce((a, b) => a | b, 0);
+        break;
       case 'XOR':
-        return inputs.reduce((a, b) => a ^ b, 0);
+        result = inputs.reduce((a, b) => a ^ b, 0);
+        break;
       case 'NOT':
-        return inputs.length === 1 ? 1 - inputs[0] : 0;
+        result = inputs.length === 1 ? 1 - inputs[0] : 0;
+        break;
       case 'NOR':
-        return inputs.reduce((a, b) => a | b, 0) === 0 ? 1 : 0;
+        const orResult = inputs.reduce((a, b) => a | b, 0);
+        result = orResult === 0 ? 1 : 0;
+        break;
       case 'XNOR':
         if (inputs.length === 0) {
-          return 1;
+          result = 1;
+        } else {
+          let parity = inputs[0];
+          for (let i = 1; i < inputs.length; i++) {
+            parity = !(parity ^ inputs[i]) ? 1 : 0;
+          }
+          result = parity;
         }
-        let parity = 0;
-        for (const input of inputs) {
-          parity ^= input;
-        }
-        return parity === 0 ? 1 : 0;
+        break;
       default:
         throw new Error(`Unknown gate type: ${type}`);
     }
+    console.log(`Gate ${type} - Inputs: ${inputs}, Output: ${result}`);
+    return result;
   }
 }
