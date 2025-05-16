@@ -3,10 +3,16 @@ import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 interface Gate {
-  id: number; // Unique ID for the gate
-  type: string; // Logical operation type (AND, OR, XOR, NOT, etc.)
-  inputs: number[]; // Input signal IDs
+  id: number;
+  type: string;
+  inputs: number[]; // Array of input signal IDs
   output: number; // Output signal ID
+}
+
+interface Connection {
+  fromGate: number; // ID of the gate where the connection originates
+  toGate: number; // ID of the gate where the connection terminates
+  toInputIndex: number; // Index of the input on the destination gate (0-based)
 }
 
 @Component({
@@ -17,20 +23,84 @@ interface Gate {
   styleUrls: ['./schneider.component.scss'],
 })
 export class SchneiderComponent {
-  numInputs: number = 2; // Default number of inputs
-  resultVectors: string = ''; // Final result vector
-  signals: Record<number, number> = {}; // Signal values
-  gates: Gate[] = []; // List of gates
+  numInputs: number = 4; // Default number of inputs
+  gates: Gate[] = [];
+  connections: Connection[] = [];
+  resultVectors: string = '';
+  signals: Record<number, number> = {};
+  nextGateId: number = 1;
+  nextSignalId: number = 5;
 
-  // Set the number of inputs dynamically
-  setNumInputs(num: string): void {
-    this.numInputs = Number(num);
+  newGateType: string = 'AND';
+  newGateInputs: string = '';
+  newGateOutput: number = this.nextSignalId;
+
+  constructor() {
+    this.addInitialGates();
   }
 
-  // Generate all possible input combinations
+  addInitialGates() {
+    // Add initial gates based on the image, using XNOR where appropriate
+    this.addGate('XNOR', [1, 3], 5); // Gate 5
+    this.addGate('XNOR', [2, 3], 6); // Gate 6
+    this.addGate('XNOR', [2, 4], 7); // Gate 7
+    this.addGate('XNOR', [5, 3], 8); // Gate 8
+    this.addGate('XNOR', [2, 5], 9); // Gate 9
+    this.addGate('XNOR', [1, 6], 10); // Gate 10
+    this.addGate('XNOR', [4, 6], 11); // Gate 11
+    this.addGate('XNOR', [8, 9, 10, 11], 12); // Gate Q
+  }
+
+  addGate(type: string, inputs: number[], output: number): void {
+    const newGate: Gate = {
+      id: this.nextGateId++,
+      type: type,
+      inputs: inputs,
+      output: output,
+    };
+    this.gates.push(newGate);
+    this.nextSignalId = Math.max(this.nextSignalId, output + 1);
+  }
+
+  addNewGate(): void {
+    const inputs = this.newGateInputs.split(',').map(Number).filter(Number);
+    this.addGate(this.newGateType, inputs, this.newGateOutput);
+    this.newGateOutput = this.nextSignalId;
+    this.newGateInputs = '';
+  }
+
+  updateInputs(gate: Gate, inputs: string): void {
+    gate.inputs = inputs.split(',').map(Number).filter(Number);
+  }
+
+  removeGate(id: number): void {
+    this.gates = this.gates.filter((gate) => gate.id !== id);
+    this.connections = this.connections.filter(
+      (connection) => connection.fromGate !== id && connection.toGate !== id
+    );
+  }
+
+  addConnection(fromGate: number, toGate: number, toInputIndex: number): void {
+    const newConnection: Connection = {
+      fromGate: fromGate,
+      toGate: toGate,
+      toInputIndex: toInputIndex,
+    };
+    this.connections.push(newConnection);
+  }
+
+  removeConnection(fromGate: number, toGate: number, toInputIndex: number): void {
+    this.connections = this.connections.filter(
+      (connection) =>
+        connection.fromGate !== fromGate ||
+        connection.toGate !== toGate ||
+        connection.toInputIndex !== toInputIndex
+    );
+  }
+
   generateInputCombinations(): number[][] {
     const combinations: number[][] = [];
-    const totalCombinations = 1 << this.numInputs; // 2^numInputs
+    const totalCombinations = 1 << this.numInputs;
 
     for (let i = 0; i < totalCombinations; i++) {
       const combination = i
@@ -44,139 +114,32 @@ export class SchneiderComponent {
     return combinations;
   }
 
-  // Process all input combinations
   processAllCombinations(): void {
     const combinations = this.generateInputCombinations();
     this.resultVectors = combinations
-      .map((inputArray) => this.schneiderMethod(inputArray)[0])
+      .map((inputArray) => this.processCircuit(inputArray))
       .join('');
   }
 
-  // Add a new gate
-  addGate(): void {
-    const usedOutputs = this.gates.map((gate) => gate.output);
-    const usedInputs = this.gates.flatMap((gate) => gate.inputs);
-    const allUsedSignals = new Set([...usedOutputs, ...usedInputs]);
-
-    let newOutput = 1;
-    while (allUsedSignals.has(newOutput)) {
-      newOutput++;
-    }
-
-    const newGate: Gate = {
-      id: this.gates.length + 1,
-      type: 'AND', // Default type
-      inputs: [],
-      output: newOutput,
-    };
-
-    this.gates.push(newGate);
-  }
-
-  // Remove a gate
-  removeGate(id: number): void {
-    this.gates = this.gates.filter((gate) => gate.id !== id);
-  }
-
-  // Update gate inputs
-  updateInputs(gate: Gate, inputs: string): void {
-    gate.inputs = inputs
-      .split(',')
-      .map((input) => Number(input.trim()))
-      .filter((input) => !isNaN(input));
-  }
-
-  // Update gate output
-  updateOutput(gate: Gate, output: string): void {
-    gate.output = Number(output);
-  }
-
-  // Topological sort to determine the order of gate processing
-  topologicalSort(gates: Gate[]): Gate[] {
-    const graph: Record<number, number[]> = {};
-    const inDegree: Record<number, number> = {};
-
-    // Initialize graph and in-degree counts
-    gates.forEach((gate) => {
-      graph[gate.id] = [];
-      inDegree[gate.id] = 0;
-    });
-
-    // Build the dependency graph
-    gates.forEach((gate) => {
-      gate.inputs.forEach((input) => {
-        const sourceGate = gates.find((g) => g.output === input);
-        if (sourceGate) {
-          graph[sourceGate.id].push(gate.id);
-          inDegree[gate.id]++;
-        }
-      });
-    });
-
-    const queue: number[] = [];
-    gates.forEach((gate) => {
-      if (inDegree[gate.id] === 0) {
-        queue.push(gate.id);
-      }
-    });
-
-    const sortedGates: Gate[] = [];
-    while (queue.length > 0) {
-      const gateId = queue.shift()!;
-      const gate = gates.find((g) => g.id === gateId)!;
-      sortedGates.push(gate);
-
-      graph[gateId].forEach((neighborId) => {
-        inDegree[neighborId]--;
-        if (inDegree[neighborId] === 0) {
-          queue.push(neighborId);
-        }
-      });
-    }
-
-    // Check for cycles
-    if (sortedGates.length !== gates.length) {
-      throw new Error('Circuit contains a cycle!');
-    }
-
-    return sortedGates;
-  }
-
-  // Process the circuit for a given input array
-  schneiderMethod(inputArray: number[]): number[] {
-    this.signals = {}; // Reset signals
+  processCircuit(inputArray: number[]): number {
+    this.signals = {};
 
     // Initialize input signals
     for (let i = 0; i < inputArray.length; i++) {
       this.signals[i + 1] = inputArray[i];
-      console.log(`Input ${i + 1}: ${this.signals[i + 1]}`); // Log input signals
     }
 
-    // Topological sort
-    let sortedGates: Gate[];
-    try {
-      sortedGates = this.topologicalSort(this.gates);
-    } catch (error: any) {
-      console.error(error.message);
-      return [];
+    // Evaluate gates
+    for (const gate of this.gates) {
+      const inputValues = gate.inputs.map((inputId) => this.signals[inputId] ?? 0);
+      this.signals[gate.output] = this.evaluateGate(gate.type, inputValues);
     }
 
-    // Compute gate outputs in sorted order
-    for (const gate of sortedGates) {
-      const inputValues = gate.inputs.map((id) => this.signals[id] ?? 0);
-      const output = this.evaluateGate(gate.type, inputValues);
-      this.signals[gate.output] = output;
-      console.log(`Gate ${gate.id} (${gate.type}) - Inputs: ${inputValues}, Output: ${output}`); // Log gate outputs
-    }
-
-    // Return the output of the last gate
-    const lastGate = this.gates[this.gates.length - 1];
-    const finalOutput = lastGate ? [this.signals[lastGate.output] || 0] : [];
-    console.log(`Final Output: ${finalOutput}`); // Log final output
-    return finalOutput;
+    // The final output is assumed to be the signal with the highest ID
+    const outputGate = this.gates.find(gate => gate.output === 12);
+    return this.signals[outputGate!.output] || 0;
   }
 
-  // Evaluate a logical operation
   evaluateGate(type: string, inputs: number[]): number {
     switch (type) {
       case 'AND':
@@ -191,7 +154,7 @@ export class SchneiderComponent {
         return inputs.reduce((a, b) => a | b, 0) === 0 ? 1 : 0;
       case 'XNOR':
         if (inputs.length === 0) {
-          return 1; // No inputs, consider it true
+          return 1;
         }
         let parity = 0;
         for (const input of inputs) {

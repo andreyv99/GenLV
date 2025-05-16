@@ -1,12 +1,11 @@
 <div class="container">
-  <h1>Schneider Logic</h1>
+  <h1>Schneider Logic Circuit</h1>
 
   <label for="numInputs">Number of Inputs:</label>
   <input id="numInputs"
          type="number"
          [(ngModel)]="numInputs"
-         (ngModelChange)="setNumInputs($event)"
-         placeholder="e.g., 3" />
+         placeholder="e.g., 4" />
 
   <h3>Gates</h3>
   <div *ngFor="let gate of gates; let idx = index"
@@ -26,14 +25,31 @@
            (ngModelChange)="updateInputs(gate, $event)" />
     <label>Output:</label>
     <input [(ngModel)]="gate.output"
-           placeholder="e.g., 5"
-           (ngModelChange)="updateOutput(gate, $event)" />
+           placeholder="e.g., 5" />
     <button (click)="removeGate(gate.id)">Remove</button>
   </div>
-  <button (click)="addGate()">Add Gate</button>
-  <button (click)="processAllCombinations()">Process All Combinations</button>
+
+  <h3>Add New Gate</h3>
+  <label>Type:</label>
+  <select [(ngModel)]="newGateType">
+    <option value="AND">AND</option>
+    <option value="OR">OR</option>
+    <option value="XOR">XOR</option>
+    <option value="NOT">NOT</option>
+    <option value="NOR">NOR</option>
+    <option value="XNOR">XNOR</option>
+  </select>
+  <label>Inputs:</label>
+  <input [(ngModel)]="newGateInputs"
+         placeholder="e.g., 1,2,3" />
+  <label>Output:</label>
+  <input [(ngModel)]="newGateOutput"
+         type="number"
+         placeholder="e.g., 5" />
+  <button (click)="addNewGate()">Add Gate</button>
+
+  <p><button (click)="processAllCombinations()">Process All Combinations</button></p>
 
   <h2>Resulting Vector:</h2>
   <p>{{ resultVectors }}</p>
-
 </div>
