@@ -1,0 +1,42 @@
+/* Add your styles here */
+
+/* filepath: /Users/andreyvoronov/Documents/хире учеба/GenLV/src/app/schneider/schneider.component.scss */
+.container {
+  text-align: center;
+  margin: 20px;
+}
+
+input {
+  margin: 10px;
+  padding: 5px;
+  width: 100px;
+}
+
+button {
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+.circuit {
+  margin-top: 20px;
+  border: 1px solid #ccc;
+}
+
+text {
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+  fill: black;
+}
+
+rect {
+  stroke: black;
+  stroke-width: 1;
+}
+
+line {
+  stroke-width: 2;
+}
+
+label {
+  display: inline;
+}

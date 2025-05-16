@@ -1,0 +1,39 @@
+<div class="container">
+  <h1>Schneider Logic</h1>
+
+  <label for="numInputs">Number of Inputs:</label>
+  <input id="numInputs"
+         type="number"
+         [(ngModel)]="numInputs"
+         (ngModelChange)="setNumInputs($event)"
+         placeholder="e.g., 3" />
+
+  <h3>Gates</h3>
+  <div *ngFor="let gate of gates; let idx = index"
+       class="gate-config">
+    <label>Gate {{ gate.id }}:</label>
+    <select [(ngModel)]="gate.type">
+      <option value="AND">AND</option>
+      <option value="OR">OR</option>
+      <option value="XOR">XOR</option>
+      <option value="NOT">NOT</option>
+      <option value="NOR">NOR</option>
+      <option value="XNOR">XNOR</option>
+    </select>
+    <label>Inputs:</label>
+    <input [(ngModel)]="gate.inputs"
+           placeholder="e.g., 1,2,3"
+           (ngModelChange)="updateInputs(gate, $event)" />
+    <label>Output:</label>
+    <input [(ngModel)]="gate.output"
+           placeholder="e.g., 5"
+           (ngModelChange)="updateOutput(gate, $event)" />
+    <button (click)="removeGate(gate.id)">Remove</button>
+  </div>
+  <button (click)="addGate()">Add Gate</button>
+  <button (click)="processAllCombinations()">Process All Combinations</button>
+
+  <h2>Resulting Vector:</h2>
+  <p>{{ resultVectors }}</p>
+
+</div>

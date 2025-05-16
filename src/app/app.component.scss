@@ -1,4 +1,24 @@
 .container {
    display: flex;
    justify-content: space-around;
-  }
+}
+
+/* Add global styles or styles for the navigation bar here */
+nav {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+button {
+    padding: 10px 15px;
+    border: none;
+    background-color: #007bff;
+    color: white;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
