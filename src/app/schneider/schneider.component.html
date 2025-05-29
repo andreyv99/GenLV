@@ -1,134 +1,179 @@
-<div class="container">
-  <h1>Schneider Logic Circuit</h1>
+<div class="container"
+     style="display: flex; flex-direction: row; align-items: flex-start;">
+  <div style="flex: 1;">
+    <h1>Schneider Logic Circuit</h1>
 
-  <label for="numInputs">Number of Inputs:</label>
-  <input id="numInputs"
-         type="number"
-         [(ngModel)]="numInputs"
-         placeholder="e.g., 4" />
+    <label for="numInputs">Number of Inputs:</label>
+    <input id="numInputs"
+           type="number"
+           [(ngModel)]="numInputs"
+           placeholder="e.g., 4" />
 
-  <h3>Gates</h3>
-  <div *ngFor="let gate of gates; let idx = index"
-       class="gate-config">
-    <label>Gate {{ gate.id }}: </label>
-    <label>Logic Vector:</label>
-    <input [(ngModel)]="gate.signature"
-           placeholder="например, 0110" />
+    <h3>Gates</h3>
+    <div *ngFor="let gate of gates; let idx = index"
+         class="gate-config">
+      <label>Gate {{ gate.id }}: </label>
+      <label>Logic Vector:</label>
+      <input [(ngModel)]="gate.signature"
+             placeholder="например, 0110" />
+      <label>Inputs:</label>
+      <input [(ngModel)]="gate.inputs"
+             placeholder="e.g., 1,2,3" />
+      <label>Output:</label>
+      <input [(ngModel)]="gate.output"
+             placeholder="e.g., 5" />
+      <button (click)="removeGate(gate.id)">Remove</button>
+    </div>
+
+    <h3>Add New Gate</h3>
+    <label> Logic Vector:</label>
+    <input [(ngModel)]="newGateSignature"
+           placeholder="example, 0110" />
     <label>Inputs:</label>
-    <input [(ngModel)]="gate.inputs"
+    <input [(ngModel)]="newGateInputs"
            placeholder="e.g., 1,2,3" />
     <label>Output:</label>
-    <input [(ngModel)]="gate.output"
+    <input [(ngModel)]="newGateOutput"
+           type="number"
            placeholder="e.g., 5" />
-    <button (click)="removeGate(gate.id)">Remove</button>
-  </div>
+    <button (click)="addNewGate()">Add Gate</button>
 
-  <h3>Add New Gate</h3>
-  <label> Logic Vector:</label>
-  <input [(ngModel)]="newGateSignature"
-         placeholder="example, 0110" />
-  <label>Inputs:</label>
-  <input [(ngModel)]="newGateInputs"
-         placeholder="e.g., 1,2,3" />
-  <label>Output:</label>
-  <input [(ngModel)]="newGateOutput"
-         type="number"
-         placeholder="e.g., 5" />
-  <button (click)="addNewGate()">Add Gate</button>
+    <p><button (click)="processAllCombinations()">Get Result</button></p>
+    <div *ngIf="resultVectors">
+      <strong>Result:</strong> {{ resultVectors }}
+    </div>
 
-  <p><button (click)="processAllCombinations()">Get Result</button></p>
-  <div *ngIf="resultVectors">
-    <strong>Result:</strong> {{ resultVectors }}
-  </div>
+    <svg width="900"
+         height="500"
+         style="background:#f9f9f9; margin: 20px 0;">
+      <!-- Входы -->
+      <g *ngFor="let input of layoutInputs">
+        <circle [attr.cx]="input.x"
+                [attr.cy]="input.y"
+                r="16"
+                fill="#b3e5fc" />
+        <text [attr.x]="input.x - 30"
+              [attr.y]="input.y + 5"
+              font-size="20">{{input.index}}</text>
+      </g>
 
-  <svg width="900"
-       height="500"
-       style="background:#f9f9f9; margin: 20px 0;">
-    <!-- Входы -->
-    <g *ngFor="let input of layoutInputs">
-      <circle [attr.cx]="input.x"
-              [attr.cy]="input.y"
-              r="16"
-              fill="#b3e5fc" />
-      <text [attr.x]="input.x - 30"
-            [attr.y]="input.y + 5"
-            font-size="20">{{input.index}}</text>
-    </g>
-
-    <!-- Связи -->
-    <ng-container *ngFor="let lg of layoutGates">
-      <ng-container *ngFor="let inp of lg.gate.inputs">
-        <!-- Связь от входа -->
-        <line *ngIf="+inp <= numInputs"
-              [attr.x1]="layoutInputs[inp-1].x"
-              [attr.y1]="layoutInputs[inp-1].y"
-              [attr.x2]="lg.x"
-              [attr.y2]="lg.y + 20"
-              stroke="#90caf9"
-              stroke-width="3"
-              marker-end="url(#arrow)" />
-        <!-- Связь от другого гейта -->
-        <ng-container *ngFor="let srcGate of layoutGates">
-          <line *ngIf="+inp > numInputs && srcGate.gate.output === +inp"
-                [attr.x1]="srcGate.x + 50"
-                [attr.y1]="srcGate.y + 20"
+      <!-- Связи -->
+      <ng-container *ngFor="let lg of layoutGates">
+        <ng-container *ngFor="let inp of lg.gate.inputs">
+          <!-- Связь от входа -->
+          <line *ngIf="+inp <= numInputs"
+                [attr.x1]="layoutInputs[inp-1].x"
+                [attr.y1]="layoutInputs[inp-1].y"
                 [attr.x2]="lg.x"
                 [attr.y2]="lg.y + 20"
                 stroke="#90caf9"
                 stroke-width="3"
                 marker-end="url(#arrow)" />
+          <!-- Связь от другого гейта -->
+          <ng-container *ngFor="let srcGate of layoutGates">
+            <line *ngIf="+inp > numInputs && srcGate.gate.output === +inp"
+                  [attr.x1]="srcGate.x + 50"
+                  [attr.y1]="srcGate.y + 20"
+                  [attr.x2]="lg.x"
+                  [attr.y2]="lg.y + 20"
+                  stroke="#90caf9"
+                  stroke-width="3"
+                  marker-end="url(#arrow)" />
+          </ng-container>
         </ng-container>
       </ng-container>
-    </ng-container>
 
-    <!-- Гейты -->
-    <g *ngFor="let lg of layoutGates">
-      <rect [attr.x]="lg.x"
-            [attr.y]="lg.y"
-            width="50"
-            height="40"
-            rx="10"
-            fill="#ffe082"
-            stroke="#888" />
-      <text [attr.x]="lg.x + 25"
-            [attr.y]="lg.y + 25"
-            font-size="18"
-            text-anchor="middle">{{lg.gate.output}}</text>
-    </g>
+      <!-- Гейты -->
+      <g *ngFor="let lg of layoutGates">
+        <rect [attr.x]="lg.x"
+              [attr.y]="lg.y"
+              width="50"
+              height="40"
+              rx="10"
+              fill="#ffe082"
+              stroke="#888" />
+        <text [attr.x]="lg.x + 25"
+              [attr.y]="lg.y + 25"
+              font-size="18"
+              text-anchor="middle">{{lg.gate.output}}</text>
+      </g>
 
-    <!-- Выход Q (последний гейт) -->
-    <g *ngIf="layoutGates.length">
-      <rect x="800"
-            [attr.y]="layoutGates[layoutGates.length-1].y"
-            width="50"
-            height="40"
-            rx="10"
-            fill="#c8e6c9"
-            stroke="#888" />
-      <text x="825"
-            [attr.y]="layoutGates[layoutGates.length-1].y + 25"
-            font-size="18"
-            text-anchor="middle">Q</text>
-      <line [attr.x1]="layoutGates[layoutGates.length-1].x + 50"
-            [attr.y1]="layoutGates[layoutGates.length-1].y + 20"
-            x2="800"
-            [attr.y2]="layoutGates[layoutGates.length-1].y + 20"
-            stroke="#a5d6a7"
-            stroke-width="3"
-            marker-end="url(#arrow)" />
-    </g>
+      <!-- Выход Q (последний гейт) -->
+      <g *ngIf="layoutGates.length">
+        <rect x="800"
+              [attr.y]="layoutGates[layoutGates.length-1].y"
+              width="50"
+              height="40"
+              rx="10"
+              fill="#c8e6c9"
+              stroke="#888" />
+        <text x="825"
+              [attr.y]="layoutGates[layoutGates.length-1].y + 25"
+              font-size="18"
+              text-anchor="middle">Q</text>
+        <line [attr.x1]="layoutGates[layoutGates.length-1].x + 50"
+              [attr.y1]="layoutGates[layoutGates.length-1].y + 20"
+              x2="800"
+              [attr.y2]="layoutGates[layoutGates.length-1].y + 20"
+              stroke="#a5d6a7"
+              stroke-width="3"
+              marker-end="url(#arrow)" />
+      </g>
 
-    <defs>
-      <marker id="arrow"
-              markerWidth="16"
-              markerHeight="16"
-              refX="16"
-              refY="8"
-              orient="auto"
-              markerUnits="strokeWidth">
-        <path d="M0,0 L16,8 L0,16 L3,8 Z"
-              fill="#888" />
-      </marker>
-    </defs>
-  </svg>
+      <defs>
+        <marker id="arrow"
+                markerWidth="8"
+                markerHeight="8"
+                refX="8"
+                refY="4"
+                orient="auto"
+                markerUnits="strokeWidth">
+          <path d="M0,0 L8,4 L0,8 L2,4 Z"
+                fill="#888" />
+        </marker>
+      </defs>
+    </svg>
+
+    <div *ngIf="truthTableRows.length"
+         style="margin-top: 32px; overflow-x: auto;">
+      <table style="border-collapse: collapse; margin: 0 auto; background: #f8fafd;">
+        <thead>
+          <tr>
+            <th *ngFor="let i of [].constructor(numInputs); let idx = index"
+                style="padding: 4px 8px; border: 1px solid #bbb;">In{{idx+1}}</th>
+            <th *ngFor="let gate of gates"
+                style="padding: 4px 8px; border: 1px solid #bbb;">G{{gate.output}}</th>
+            <th style="padding: 4px 8px; border: 1px solid #bbb; background: #e0f7fa;">Q</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of truthTableRows">
+            <td *ngFor="let v of row.inputs; let i = index"
+                [style.background]="'#e3f2fd'"
+                style="padding: 4px 8px; border: 1px solid #bbb;">{{v}}</td>
+            <td *ngFor="let gate of gates"
+                style="padding: 4px 8px; border: 1px solid #bbb;">{{row.gateResults[gate.output]}}</td>
+            <td style="padding: 4px 8px; border: 1px solid #bbb; background: #e0f7fa; font-weight: bold;">{{row.output}}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="side-image"
+       style="width: 480px; min-height: 280px; margin-left: 32px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; background: #fafbfc; border-radius: 16px; box-shadow: 0 2px 8px #0001; padding: 24px; position: sticky; top: 24px; z-index: 10;"
+       (paste)="onImagePaste($event)">
+    <h3 style="font-size: 1.5rem; margin-bottom: 24px;">Paste Circuit image <br> <small>(or CTRL + V)</small></h3>
+    <input type="file"
+           accept="image/*"
+           (change)="onImageSelected($event)"
+           style="margin-bottom: 24px;" />
+    <div *ngIf="sideImageUrl"
+         style="margin-top: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+      <img [src]="sideImageUrl"
+           alt="Схема"
+           style="max-width: 100%; max-height: 100%; border: 1px solid #ccc; border-radius: 12px; background: #fff; margin-bottom: 12px;" />
+      <button (click)="sideImageUrl = null"
+              style="margin-top: 8px;">Delete Image</button>
+    </div>
+  </div>
 </div>

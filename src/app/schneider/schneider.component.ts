@@ -41,6 +41,10 @@ export class SchneiderComponent {
   layoutGates: { gate: any, x: number, y: number, level: number }[] = [];
   layoutInputs: { index: number, x: number, y: number }[] = [];
 
+  sideImageUrl: string | null = null;
+
+  truthTableRows: Array<{ inputs: number[], gateResults: Record<number, number>, output: number }> = [];
+
   constructor() {
     this.addInitialGates();
   }
@@ -125,9 +129,30 @@ export class SchneiderComponent {
   }
 
   processAllCombinations(): void {
+    this.truthTableRows = [];
     const combinations = this.generateInputCombinations();
     this.resultVectors = combinations
-      .map((inputArray) => this.processCircuit(inputArray))
+      .map((inputArray) => {
+        this.signals = {};
+        for (let i = 0; i < inputArray.length; i++) {
+          this.signals[i + 1] = inputArray[i];
+        }
+        const gateResults: Record<number, number> = {};
+        for (const gate of this.gates) {
+          const inputValues = gate.inputs.replace(/\s+/g, '').split(',').map(Number).filter(Number).map((inputId: number) => this.signals[inputId] ?? 0);
+          const res = this.evaluateGateBySignature(gate.signature, inputValues);
+          this.signals[gate.output] = res;
+          gateResults[gate.output] = res;
+        }
+        let outputGate: Gate | undefined;
+        if (this.gates.length > 0) {
+          outputGate = this.gates.reduce((prev, current) =>
+            (prev.output > current.output) ? prev : current);
+        }
+        const output = outputGate ? this.signals[outputGate.output] || 0 : 0;
+        this.truthTableRows.push({ inputs: [...inputArray], gateResults: { ...gateResults }, output });
+        return output;
+      })
       .join('');
   }
 
@@ -203,6 +228,34 @@ export class SchneiderComponent {
       return outputGate ? this.signals[outputGate.output] || 0 : 0;
     });
     this.resultVectors = results.join('');
+  }
+
+  onImageSelected(event: any): void {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e: any) => {
+      this.sideImageUrl = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  onImagePaste(event: ClipboardEvent): void {
+    const items = event.clipboardData?.items;
+    if (!items) return;
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.type.indexOf('image') !== -1) {
+        const file = item.getAsFile();
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (e: any) => {
+            this.sideImageUrl = e.target.result;
+          };
+          reader.readAsDataURL(file);
+        }
+      }
+    }
   }
 
   ngDoCheck() {
