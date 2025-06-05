@@ -87,15 +87,21 @@
       <g *ngFor="let lg of layoutGates">
         <rect [attr.x]="lg.x"
               [attr.y]="lg.y"
-              width="50"
-              height="40"
+              [attr.width]="lg.gate.signature.length > 10 ? '160' : '70'"
+              height="50"
               rx="10"
               fill="#ffe082"
               stroke="#888" />
-        <text [attr.x]="lg.x + 25"
-              [attr.y]="lg.y + 25"
-              font-size="18"
+        <text [attr.x]="lg.x + (lg.gate.signature.length > 10 ? 80 : 35)"
+              [attr.y]="lg.y + 20"
+              font-size="14"
               text-anchor="middle">{{lg.gate.output}}</text>
+        <text [attr.x]="lg.x + (lg.gate.signature.length > 10 ? 80 : 35)"
+              [attr.y]="lg.y + 40"
+              [attr.font-size]="lg.gate.signature.length > 10 ? '10' : '12'"
+              text-anchor="middle"
+              fill="#1c7dff"
+              font-weight="bold">{{lg.gate.signature}}</text>
       </g>
 
       <!-- Выход Q (последний гейт) -->
@@ -111,7 +117,7 @@
               [attr.y]="layoutGates[layoutGates.length-1].y + 25"
               font-size="18"
               text-anchor="middle">Q</text>
-        <line [attr.x1]="layoutGates[layoutGates.length-1].x + 50"
+        <line [attr.x1]="layoutGates[layoutGates.length-1].x + (layoutGates[layoutGates.length-1].gate.signature.length > 10 ? 160 : 70)"
               [attr.y1]="layoutGates[layoutGates.length-1].y + 20"
               x2="800"
               [attr.y2]="layoutGates[layoutGates.length-1].y + 20"
@@ -140,20 +146,20 @@
         <thead>
           <tr>
             <th *ngFor="let i of [].constructor(numInputs); let idx = index"
-                style="padding: 4px 8px; border: 1px solid #bbb;">In{{idx+1}}</th>
+                style="padding: 4px 4px; border: 1px solid #bbb;">In{{idx+1}}</th>
             <th *ngFor="let gate of gates"
-                style="padding: 4px 8px; border: 1px solid #bbb;">G{{gate.output}}</th>
-            <th style="padding: 4px 8px; border: 1px solid #bbb; background: #e0f7fa;">Q</th>
+                style="padding: 4px 4px; border: 1px solid #bbb;">G{{gate.output}}</th>
+            <th style="padding: 4px 4px; border: 1px solid #bbb; background: #e0f7fa;">Q</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let row of truthTableRows">
             <td *ngFor="let v of row.inputs; let i = index"
                 [style.background]="'#e3f2fd'"
-                style="padding: 4px 8px; border: 1px solid #bbb;">{{v}}</td>
+                style="padding: 4px 4px; border: 1px solid #bbb;">{{v}}</td>
             <td *ngFor="let gate of gates"
-                style="padding: 4px 8px; border: 1px solid #bbb;">{{row.gateResults[gate.output]}}</td>
-            <td style="padding: 4px 8px; border: 1px solid #bbb; background: #e0f7fa; font-weight: bold;">{{row.output}}</td>
+                style="padding: 4px 4px; border: 1px solid #bbb;">{{row.gateResults[gate.output]}}</td>
+            <td style="padding: 4px 4px; border: 1px solid #bbb; background: #e0f7fa; font-weight: bold;">{{row.output}}</td>
           </tr>
         </tbody>
       </table>
