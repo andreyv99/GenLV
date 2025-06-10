@@ -45,8 +45,8 @@
       <th *ngFor="let col of colsVector">{{ col }}</th>
     </tr>
     <tr *ngFor="let row of resultMatrix; let i = index">
-      <td style="font-weight: 600;">{{ colHeaders[i] }}</td>
-      <td style="font-weight: 600;">{{ rowsVector[i] }}</td>
+      <td>{{ colHeaders[i] }}</td>
+      <td>{{ rowsVector[i] }}</td>
       <td class="resultCell"
           *ngFor="let cell of row">{{ cell === 1 ? cell : null }}</td>
     </tr>
