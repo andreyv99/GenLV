@@ -64,6 +64,24 @@ export class SchneiderComponent {
   get Math() {
     return Math;
   }
+
+  get svgTranslate(): string {
+    // Для inputs учитываем радиус круга (16), для gates — высоту прямоугольника
+    const inputTops = this.layoutInputs.map(i => i.y - 16);
+    const inputBottoms = this.layoutInputs.map(i => i.y + 16);
+    const gateTops = this.layoutGates.map(g => g.y);
+    const gateBottoms = this.layoutGates.map(g => g.y + 50 + Math.max(0, (g.gate.inputs.length - 2) * 15));
+    const allTops = [...inputTops, ...gateTops];
+    const allBottoms = [...inputBottoms, ...gateBottoms];
+    if (allTops.length === 0 || allBottoms.length === 0) return '';
+    const minY = Math.min(...allTops);
+    const maxY = Math.max(...allBottoms);
+    const svgHeight = 500; // как в шаблоне
+    const schemeHeight = maxY - minY;
+    const offsetY = (svgHeight - schemeHeight) / 2 - minY;
+    return `translate(0, ${offsetY})`;
+  }
+
   addGate(signature: string, inputs: string, output: number): void {
     const newGate: Gate = {
       id: this.nextGateId++,
@@ -285,13 +303,20 @@ export class SchneiderComponent {
       if (!gatesByLevel[level]) gatesByLevel[level] = [];
       gatesByLevel[level].push(gate);
     }
-    // 3. Вычисляем координаты для входов
+    // 3. Вычисляем высоту схемы
+    const inputHeight = this.numInputs > 0 ? (this.numInputs - 1) * 80 + 32 : 0;
+    const maxGatesInLevel = Math.max(...gatesByLevel.map(g => g.length), 1);
+    const gatesHeight = maxGatesInLevel > 0 ? (maxGatesInLevel - 1) * 100 + 50 : 0;
+    const schemeHeight = Math.max(inputHeight, gatesHeight);
+    const svgHeight = 500;
+    const startY = (svgHeight - schemeHeight) / 2;
+    // 4. Вычисляем координаты для входов
     this.layoutInputs = Array.from({ length: this.numInputs }, (_, i) => ({
       index: i + 1,
       x: 60,
-      y: 80 + i * 80,
+      y: startY + 16 + i * 80,
     }));
-    // 4. Вычисляем координаты для гейтов
+    // 5. Вычисляем координаты для гейтов
     this.layoutGates = [];
     const xStep = 160;
     const yStep = 100;
@@ -302,7 +327,7 @@ export class SchneiderComponent {
         this.layoutGates.push({
           gate: newGate,
           x: 200 + level * xStep,
-          y: 80 + i * yStep,
+          y: startY + i * yStep,
           level,
         });
       });
