@@ -1,0 +1,99 @@
+<div class="container">
+  <h2>Logical Vector to Graph Scheme</h2>
+  <input [(ngModel)]="inputVector"
+         placeholder="Enter logical vector (e.g., 0001, 0110, 0111, 1001, ...)"
+         id="inputVector"
+         style="width: 50%; margin-bottom: 8px;"
+         (keydown.enter)="onConvert()" />
+  <div><button (click)="onConvert()">Convert</button></div>
+  <div *ngIf="error" style="color: red; margin-top: 8px;">{{ error }}</div>
+
+  <div *ngIf="showResult && !error"
+       style="display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 40px; margin-top: 24px;">
+    <svg [attr.width]="svgSize"
+         [attr.height]="svgSize"
+         style="border: 1px solid #ccc;">
+      <!-- Nodes (только круги) -->
+      <g *ngFor="let node of nodes; let i = index">
+        <circle [attr.cx]="nodeCoords[i].x"
+                [attr.cy]="nodeCoords[i].y"
+                r="18"
+                [attr.fill]="nodeColors[i % nodeColors.length]"
+                [attr.stroke]="'#1976d2'"
+                stroke-width="3" />
+        <!-- Белый круг под текст -->
+        <circle [attr.cx]="nodeCoords[i].x"
+                [attr.cy]="nodeCoords[i].y"
+                r="11"
+                fill="#fff" />
+      </g>
+      <!-- Edges (arrows) -->
+      <ng-container *ngFor="let from of nodes; let i = index">
+        <ng-container *ngFor="let to of nodes; let j = index">
+          <ng-container *ngIf="inputVector[i * nodes.length + j] === '1'">
+            <!-- Петля -->
+            <ng-container *ngIf="i === j">
+              <ng-container *ngIf="nodes.length === 2">
+                <!-- Квадратная петля для 0 (слева) -->
+                <path *ngIf="i === 0"
+                  [attr.d]="'M ' + (nodeCoords[0].x - 18) + ' ' + (nodeCoords[0].y + 6) + ' h -18 v -18 h 18'"
+                  stroke="#1976d2" stroke-width="3" fill="none" marker-end="url(#arrowSmall)" />
+                <!-- Квадратная петля для 1 (справа) -->
+                <path *ngIf="i === 1"
+                  [attr.d]="'M ' + (nodeCoords[1].x + 18) + ' ' + (nodeCoords[1].y - 6) + ' h 18 v 18 h -18'"
+                  stroke="#1976d2" stroke-width="3" fill="none" marker-end="url(#arrowSmall)" />
+              </ng-container>
+              <ng-container *ngIf="nodes.length !== 2">
+                <!-- Новая петля: выраженная, сбоку от круга -->
+                <path [attr.d]="getExpressiveLoopPath(nodeCoords[i].x, nodeCoords[i].y, i, nodes.length, 28)"
+                      stroke="#1976d2" stroke-width="3" fill="none" marker-end="url(#arrowSmall)" />
+              </ng-container>
+            </ng-container>
+            <!-- Обычная стрелка -->
+            <ng-container *ngIf="i !== j">
+              <line [attr.x1]="getEdgePoint(nodeCoords[i].x, nodeCoords[i].y, nodeCoords[j].x, nodeCoords[j].y, 18).x"
+                    [attr.y1]="getEdgePoint(nodeCoords[i].x, nodeCoords[i].y, nodeCoords[j].x, nodeCoords[j].y, 18).y"
+                    [attr.x2]="getEdgePoint(nodeCoords[j].x, nodeCoords[j].y, nodeCoords[i].x, nodeCoords[i].y, 18).x"
+                    [attr.y2]="getEdgePoint(nodeCoords[j].x, nodeCoords[j].y, nodeCoords[i].x, nodeCoords[i].y, 18).y"
+                    marker-end="url(#arrow)"
+                    stroke="#1976d2" stroke-width="2.5" />
+            </ng-container>
+          </ng-container>
+        </ng-container>
+      </ng-container>
+      <!-- Текст поверх -->
+      <g *ngFor="let node of nodes; let i = index">
+        <text [attr.x]="nodeCoords[i].x"
+              [attr.y]="nodeCoords[i].y + 6"
+              text-anchor="middle"
+              font-size="14"
+              fill="#1976d2"
+              style="pointer-events: none; font-weight: bold;">{{ node }}</text>
+      </g>
+      <defs>
+        <marker id="arrow" markerWidth="10" markerHeight="10" refX="10" refY="5" orient="auto" markerUnits="strokeWidth">
+          <path d="M0,0 L10,5 L0,10 Z" fill="#1976d2" />
+        </marker>
+        <marker id="arrowSmall" markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto" markerUnits="strokeWidth">
+          <path d="M0,0 L6,3 L0,6 Z" fill="#1976d2" />
+        </marker>
+      </defs>
+    </svg>
+    <!-- Truth Table -->
+    <div style="min-width: 180px; margin-left: 32px; display: flex; flex-direction: column; align-items: center;">
+      <div style="font-weight: bold; margin-bottom: 8px; text-align: center;">Truth Table</div>
+      <table border="1" style="border-collapse: collapse; width: 100%;">
+        <tr>
+          <th style="padding:2px 6px;">Input</th>
+          <th *ngFor="let node of nodes" style="padding:2px 6px;">{{ node }}</th>
+        </tr>
+        <tr *ngFor="let from of nodes; let i = index">
+          <td style="padding:2px 6px; font-weight: bold;">{{ from }}</td>
+          <td *ngFor="let to of nodes; let j = index" style="padding:2px 6px; text-align: center;">
+            {{ inputVector[i * nodes.length + j] }}
+          </td>
+        </tr>
+      </table>
+    </div>
+  </div>
+</div>
