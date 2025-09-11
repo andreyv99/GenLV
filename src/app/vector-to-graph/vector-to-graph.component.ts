@@ -11,6 +11,8 @@ import { FormsModule } from '@angular/forms';
 })
 export class VectorToGraphComponent {
     inputVector: string = '';
+    rows: number = 2;
+    cols: number = 2;
     error: string = '';
     showResult: boolean = false;
     nodes: string[] = [];
@@ -25,35 +27,199 @@ export class VectorToGraphComponent {
     bipartiteLayout: boolean = false;
     // Разбиение по индексам вершин: 0 = левая доля (U), 1 = правая доля (V), -1 = неизвестно
     partitionByIndex: number[] = [];
+    
+    // Свойство для определения рефлексивных отношений
+    hasReflexiveRelations: boolean = false;
+    
+    // Свойство для определения, нужно ли показывать поля ввода размеров
+    showSizeInputs: boolean = false;
+    
+    // Флаг для отслеживания изменений в векторе
+    private lastVectorLength: number = 0;
+
+    // Настройка: скрывать изолированные вершины
+    hideIsolated: boolean = false;
+    // Индексы видимых вершин после фильтрации
+    visibleNodeIndices: number[] = [];
+    // Есть ли изолированные вершины в текущем графе
+    hasIsolatedVertices: boolean = false;
 
     get Math() {
         return Math;
     }
 
+    // Получение бинарного индекса для отображения в таблице
+    getBinaryIndex(index: number, maxSize: number): string {
+        const n = Math.max(1, Math.ceil(Math.log2(maxSize)));
+        return index.toString(2).padStart(n, '0');
+    }
+
+    // Унифицированный бинарный индекс (ширина = log2(max(rows, cols)))
+    getBinaryIndexUnified(index: number): string {
+        const maxSize = Math.max(this.rows, this.cols);
+        const n = Math.max(1, Math.ceil(Math.log2(maxSize)));
+        return index.toString(2).padStart(n, '0');
+    }
+
+    // Проверка, является ли число степенью двойки
+    private isPowerOfTwo(n: number): boolean {
+        return n > 0 && (n & (n - 1)) === 0;
+    }
+
+    // Умное определение размеров матрицы
+    private determineMatrixSize(vectorLength: number) {
+        const sqrt = Math.sqrt(vectorLength);
+        
+        if (Number.isInteger(sqrt)) {
+            // Квадратная матрица - автоматически определяем размеры
+            this.rows = sqrt;
+            this.cols = sqrt;
+            this.showSizeInputs = false;
+        } else {
+            // Неквадратная матрица - показываем поля ввода
+            this.showSizeInputs = true;
+            // Если размеры не заданы, устанавливаем значения по умолчанию
+            if (this.rows * this.cols !== vectorLength) {
+                // Находим наиболее сбалансированные размеры
+                const [factor1, factor2] = this.findBalancedFactors(vectorLength);
+                this.rows = factor1;
+                this.cols = factor2;
+            }
+        }
+    }
+
+    // Автоматическое определение необходимости показа полей ввода
+    onVectorChange() {
+        const currentLength = this.inputVector.length;
+        
+        // Проверяем, изменилась ли длина вектора
+        if (currentLength !== this.lastVectorLength) {
+            this.lastVectorLength = currentLength;
+            
+            // Проверяем, является ли длина степенью двойки
+            if (this.isPowerOfTwo(currentLength) && currentLength > 0) {
+                const sqrt = Math.sqrt(currentLength);
+                
+                if (Number.isInteger(sqrt)) {
+                    // Квадратная матрица - скрываем поля ввода
+                    this.showSizeInputs = false;
+                    this.rows = sqrt;
+                    this.cols = sqrt;
+                } else {
+                    // Неквадратная матрица - показываем поля ввода
+                    this.showSizeInputs = true;
+                    // Устанавливаем наиболее сбалансированные размеры по умолчанию
+                    const [factor1, factor2] = this.findBalancedFactors(currentLength);
+                    this.rows = factor1;
+                    this.cols = factor2;
+                }
+            } else {
+                // Не степень двойки - скрываем поля ввода
+                this.showSizeInputs = false;
+            }
+        }
+    }
+
+    // Поиск наиболее сбалансированной пары множителей для длины вектора
+    private findBalancedFactors(n: number): [number, number] {
+        let bestPair: [number, number] = [1, n];
+        let minDifference = n - 1;
+        
+        for (let i = 1; i <= Math.sqrt(n); i++) {
+            if (n % i === 0) {
+                const factor1 = i;
+                const factor2 = n / i;
+                const difference = Math.abs(factor1 - factor2);
+                
+                if (difference < minDifference) {
+                    minDifference = difference;
+                    bestPair = [factor1, factor2];
+                }
+            }
+        }
+        
+        return bestPair;
+    }
+
+    // Генерация меток вершин на основе строк и столбцов
+    private generateNodeLabels() {
+        this.nodes = [];
+        
+        // Проверяем, нужен ли двудольный граф
+        const shouldBeBipartite = this.shouldCreateBipartiteGraph();
+        
+        if (shouldBeBipartite) {
+            // Двудольный граф: отдельная нумерация для строк и столбцов
+            const n = Math.max(1, Math.ceil(Math.log2(Math.max(this.rows, this.cols))));
+            // U: строки 0..rows-1
+            for (let i = 0; i < this.rows; i++) {
+                this.nodes.push(i.toString(2).padStart(n, '0'));
+            }
+            // V: столбцы 0..cols-1 (с тем же количеством бит)
+            for (let j = 0; j < this.cols; j++) {
+                this.nodes.push(j.toString(2).padStart(n, '0'));
+            }
+        } else {
+            // Обычный граф
+            const maxIndex = Math.max(this.rows, this.cols);
+            const n = Math.ceil(Math.log2(maxIndex));
+            for (let i = 0; i < maxIndex; i++) {
+                this.nodes.push(i.toString(2).padStart(n, '0'));
+            }
+        }
+    }
+
+    // Определение, должен ли граф иметь рефлексивные отношения
+    private shouldHaveReflexiveRelations(rows: number, cols: number): boolean {
+        // Бинарные графы (2×2) не имеют рефлексивных отношений
+        if (rows === 2 && cols === 2) {
+            return false;
+        }
+        
+        // Все остальные графы имеют рефлексивные отношения
+        return true;
+    }
+
     onConvert() {
         this.error = '';
         const len = this.inputVector.length;
-        if (!/^[01]+$/.test(this.inputVector) || len < 2 || len > 256) {
-            this.error = 'The vector length must contain 2-256 digits (0 or 1)';
-            this.showResult = false;
-            return;
-        }
-        // Проверка: длина вектора должна быть квадратом целого числа
-        const N = Math.sqrt(len);
-        if (!Number.isInteger(N)) {
-            this.error = 'The vector length must be a perfect square (4, 9, 16, 25, ...)';
+        if (!/^[01]+$/.test(this.inputVector) || len < 1 || len > 1024) {
+            this.error = 'The vector length must contain 1-1024 digits (0 or 1)';
             this.showResult = false;
             return;
         }
         
-        const n = Math.ceil(Math.log2(N));
-        this.nodes = Array.from({ length: N }, (_, i) => i.toString(2).padStart(n, '0'));
+        // Проверяем, что общее количество элементов кратно степени двойки
+        if (!this.isPowerOfTwo(len)) {
+            this.error = 'The vector length must be a power of 2 (1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024)';
+            this.showResult = false;
+            return;
+        }
+        
+        // Умное определение размеров матрицы
+        this.determineMatrixSize(len);
+        
+        // Проверяем, что произведение строк и столбцов равно длине вектора
+        const expectedLength = this.rows * this.cols;
+        if (len !== expectedLength) {
+            this.error = `Vector length (${len}) must equal rows × cols (${this.rows} × ${this.cols} = ${expectedLength})`;
+            this.showResult = false;
+            return;
+        }
+        
+        // Генерируем имена вершин
+        this.generateNodeLabels();
+        
+        // Определяем, должен ли граф иметь рефлексивные отношения
+        this.hasReflexiveRelations = this.shouldHaveReflexiveRelations(this.rows, this.cols);
         
         // Проверяем, является ли граф двудольным
         this.checkBipartite();
         
         // Генерируем координаты в зависимости от типа графа
         this.generateCoordinates();
+        // Рассчитываем видимые вершины с учётом hideIsolated
+        this.computeVisibleNodes();
         
         this.showResult = true;
     }
@@ -61,52 +227,59 @@ export class VectorToGraphComponent {
     // Проверка двудольности графа
     private checkBipartite() {
         const N = this.nodes.length;
-        const directed = this.buildAdjacencyMatrix();
-        const adjacencyMatrix = this.buildUndirectedNoLoopAdjacency(directed);
         
-        // Используем BFS для проверки двудольности (по неориентированной матрице без петель)
-        const colors = new Array(N).fill(-1); // -1 = не посещена, 0/1 = цвета
-        let isBipartite = true;
+        // Проверяем, нужен ли двудольный граф на основе структуры вектора
+        const shouldBeBipartite = this.shouldCreateBipartiteGraph();
         
-        for (let start = 0; start < N && isBipartite; start++) {
-            if (colors[start] === -1) {
-                isBipartite = this.bfsCheckBipartite(adjacencyMatrix, start, colors);
-            }
-        }
-        
-        // Если нет межвершинных рёбер (только изоляция и/или петли), распределяем вершины попеременно для лучшего отображения
-        const hasCrossEdges = (() => {
-            for (let i = 0; i < N; i++) {
-                for (let j = i + 1; j < N; j++) {
-                    if (adjacencyMatrix[i][j]) return true;
-                }
-            }
-            return false;
-        })();
-        if (isBipartite && !hasCrossEdges) {
-            for (let i = 0; i < N; i++) colors[i] = i % 2;
-        }
-        
-        this.isBipartite = isBipartite;
-        this.partitionByIndex = colors.slice();
-        
-        if (this.isBipartite) {
-            // Разделяем вершины на две части
+        if (shouldBeBipartite) {
+            // Двудольный граф
+            this.isBipartite = true;
+            this.bipartiteLayout = true;
+            
+            // Создаем разделение: первые rows вершин = U, следующие cols вершин = V
+            this.partitionByIndex = new Array(this.nodes.length).fill(-1);
             this.leftPartition = [];
             this.rightPartition = [];
-            for (let i = 0; i < N; i++) {
-                if (this.partitionByIndex[i] === 0) {
-                    this.leftPartition.push(this.nodes[i]);
-                } else if (this.partitionByIndex[i] === 1) {
-                    this.rightPartition.push(this.nodes[i]);
-                }
+            for (let i = 0; i < this.rows; i++) {
+                this.partitionByIndex[i] = 0;
+                this.leftPartition.push(this.nodes[i]);
             }
-            this.bipartiteLayout = true;
+            for (let j = 0; j < this.cols; j++) {
+                const idx = this.rows + j;
+                this.partitionByIndex[idx] = 1;
+                this.rightPartition.push(this.nodes[idx]);
+            }
         } else {
+            // Обычный граф
+            this.isBipartite = false;
             this.bipartiteLayout = false;
             this.leftPartition = [];
             this.rightPartition = [];
+            this.partitionByIndex = new Array(N).fill(-1);
         }
+    }
+
+    // Определение, нужно ли создавать двудольный граф
+    private shouldCreateBipartiteGraph(): boolean {
+        // Двудольный граф: квадратная матрица и в КАЖДОЙ строке ровно одна '1'
+        // (функциональное отображение строк → столбцы)
+        if (this.rows !== this.cols) return false;
+        if (this.rows === 1 && this.cols === 1) return false; // 1×1 не двудольный
+        return this.isFunctionalRowMapping();
+    }
+
+    // Проверка: в каждой строке ровно одна '1'
+    private isFunctionalRowMapping(): boolean {
+        for (let i = 0; i < this.rows; i++) {
+            let onesInRow = 0;
+            for (let j = 0; j < this.cols; j++) {
+                const idx = i * this.cols + j;
+                if (this.inputVector[idx] === '1') onesInRow++;
+                if (onesInRow > 1) return false;
+            }
+            if (onesInRow !== 1) return false;
+        }
+        return true;
     }
 
     // BFS для проверки двудольности
@@ -135,18 +308,70 @@ export class VectorToGraphComponent {
 
     // Построение матрицы смежности
     private buildAdjacencyMatrix(): boolean[][] {
-        const N = this.nodes.length;
-        const matrix: boolean[][] = Array(N).fill(null).map(() => Array(N).fill(false));
+        const totalNodes = this.nodes.length;
+        const matrix: boolean[][] = Array(totalNodes).fill(null).map(() => Array(totalNodes).fill(false));
         
-        for (let i = 0; i < N; i++) {
-            for (let j = 0; j < N; j++) {
-                if (this.inputVector[i * N + j] === '1') {
-                    matrix[i][j] = true;
+        // Проверяем, нужен ли двудольный граф
+        const shouldBeBipartite = this.shouldCreateBipartiteGraph();
+        
+        if (shouldBeBipartite) {
+            // Двудольный граф
+            for (let i = 0; i < this.rows; i++) {
+                for (let j = 0; j < this.cols; j++) {
+                    const vectorIndex = i * this.cols + j;
+                    if (this.inputVector[vectorIndex] === '1') {
+                        // Связываем строку i с столбцом j
+                        const rowNodeIndex = i; // Строки в левой доле
+                        const colNodeIndex = this.rows + j; // Столбцы в правой доле, метки совпадают (00..11)
+                        matrix[rowNodeIndex][colNodeIndex] = true;
+                    }
+                }
+            }
+        } else {
+            // Обычный граф
+            for (let i = 0; i < this.rows; i++) {
+                for (let j = 0; j < this.cols; j++) {
+                    const vectorIndex = i * this.cols + j;
+                    if (this.inputVector[vectorIndex] === '1') {
+                        // Связываем вершину строки i с вершиной столбца j
+                        const rowNodeIndex = i;
+                        const colNodeIndex = j;
+                        matrix[rowNodeIndex][colNodeIndex] = true;
+                    }
                 }
             }
         }
         
+        // Если граф должен иметь рефлексивные отношения, добавляем петли
+        if (this.hasReflexiveRelations) {
+            for (let i = 0; i < totalNodes; i++) {
+                matrix[i][i] = true;
+            }
+        }
+        
         return matrix;
+    }
+
+    // Подсчёт изолированных вершин и формирование списка видимых
+    public computeVisibleNodes() {
+        // Строим неориентированную матрицу без петель, чтобы
+        // игнорировать рефлексивные петли при определении изолированных вершин
+        const directed = this.buildAdjacencyMatrix();
+        const adj = this.buildUndirectedNoLoopAdjacency(directed);
+        const N = adj.length;
+        this.visibleNodeIndices = [];
+        let isolated = 0;
+        for (let i = 0; i < N; i++) {
+            let degree = 0;
+            for (let j = 0; j < N; j++) {
+                if (adj[i][j]) degree++;
+            }
+            if (degree === 0) isolated++;
+            if (!this.hideIsolated || degree > 0) {
+                this.visibleNodeIndices.push(i);
+            }
+        }
+        this.hasIsolatedVertices = isolated > 0;
     }
 
     // Неориентированная матрица без петель: A[i][j] = A[j][i] = true, если существует ребро i→j или j→i, i != j

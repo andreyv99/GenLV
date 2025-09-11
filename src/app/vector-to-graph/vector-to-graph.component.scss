@@ -12,14 +12,76 @@ h2 {
   margin-bottom: 24px;
 }
 
+/* Стили для группы ввода */
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 16px;
+  align-items: center;
+  justify-content: center;
+}
+
+.input-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+  transition: all 0.3s ease-in-out;
+  overflow: hidden;
+}
+
+.input-row.ng-enter {
+  opacity: 0;
+  max-height: 0;
+}
+
+.input-row.ng-enter-active {
+  opacity: 1;
+  max-height: 60px;
+}
+
+.input-row.ng-leave {
+  opacity: 1;
+  max-height: 60px;
+}
+
+.input-row.ng-leave-active {
+  opacity: 0;
+  max-height: 0;
+}
+
+.input-row label {
+  font-weight: bold;
+  color: #333;
+  min-width: 80px;
+  display: inline-flex;
+  align-items: center;
+  margin-top: 0;
+}
+
+.size-inputs-header {
+  width: 100%;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
 input {
   padding: 8px 12px;
   border: 2px solid #e0e0e0;
   border-radius: 4px;
   font-size: 14px;
   transition: border-color 0.3s;
-  width: 50%;
-  margin-bottom: 8px;
+}
+
+input[type="text"] {
+  width: 400px;
+  max-width: 80%;
+}
+
+input[type="number"] {
+  width: 80px;
 }
 
 input:focus {
@@ -121,7 +183,7 @@ table {
 }
 
 th, td {
-  padding: 6px 8px;
+  padding: 6px 4px;
   text-align: center;
   border: 1px solid #ddd;
 }
@@ -130,6 +192,51 @@ th {
   background-color: #f5f5f5;
   font-weight: bold;
   color: #333;
+}
+
+/* Стили для информации о рефлексивных отношениях */
+.reflexive-info {
+  margin-top: 16px;
+  text-align: center;
+  background: #fff3e0;
+  padding: 12px;
+  border-radius: 6px;
+  border: 2px solid #ff9800;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Стили для информации о структуре графа */
+.graph-info {
+  margin-top: 16px;
+  text-align: center;
+  background: #e8f5e8;
+  padding: 12px;
+  border-radius: 6px;
+  border: 2px solid #4caf50;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.info-label {
+  font-weight: bold;
+  margin-bottom: 8px;
+  color: #e65100;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.info-item strong {
+  color: #e65100;
+  font-size: 16px;
+}
+
+.info-item small {
+  color: #666;
+  font-style: italic;
 }
 
 /* Стили для информации о двудольном графе */
