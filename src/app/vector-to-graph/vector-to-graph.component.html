@@ -9,6 +9,9 @@
              id="inputVector"
              (input)="onVectorChange()"
              (keydown.enter)="onConvert()" />
+      <label style="margin-left: 12px;">
+        <input type="checkbox" [(ngModel)]="forceBipartite" /> Bipartite layout
+      </label>
     </div>
     
     <div class="input-row" *ngIf="showSizeInputs">

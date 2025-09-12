@@ -47,6 +47,8 @@ export class VectorToGraphComponent {
     hasIsolatedVertices: boolean = false;
     // Список рёбер для отрисовки
     edges: { from: number; to: number }[] = [];
+    // Переключатель: принудительно отображать двудольный граф для квадратных матриц
+    forceBipartite: boolean = false;
 
     get Math() {
         return Math;
@@ -253,7 +255,8 @@ export class VectorToGraphComponent {
             // Двудольный граф
             this.isBipartite = true;
             this.bipartiteLayout = true;
-            this.bipartiteVertical = this.rows !== this.cols;
+            // Вертикально для прямоугольных и для квадратных при принудительном режиме
+            this.bipartiteVertical = (this.rows !== this.cols) || this.forceBipartite;
             
             // Создаем разделение долей в соответствии с порядком узлов
             // Квадратная: [U(rows)..., V(cols)...]
@@ -300,8 +303,9 @@ export class VectorToGraphComponent {
         if (this.rows !== this.cols) {
             return this.isPowerOfTwo(this.rows) && this.isPowerOfTwo(this.cols);
         }
-        // Квадратные матрицы → бипартитный граф, если функция строк → столбцов
+        // Квадратные: по переключателю или по правилу функционального отображения
         if (this.rows === 1 && this.cols === 1) return false; // 1×1 не двудольный
+        if (this.forceBipartite) return true;
         return this.isFunctionalRowMapping();
     }
 
