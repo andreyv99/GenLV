@@ -38,7 +38,7 @@
       <!-- Овальные контуры для разделов двудольного графа -->
       <ng-container *ngIf="bipartiteLayout">
         <ng-container *ngIf="getPartitionOvals() as ovalCoords">
-          <!-- Левая часть (раздел U) -->
+          <!-- Левая часть (раздел L) -->
           <ellipse [attr.cx]="ovalCoords.left.x"
                    [attr.cy]="ovalCoords.left.y"
                    [attr.rx]="ovalCoords.left.width / 2"
@@ -49,7 +49,7 @@
                    stroke-dasharray="5,5"
                    opacity="0.7" />
           
-          <!-- Правая часть (раздел V) -->
+          <!-- Правая часть (раздел D) -->
           <ellipse [attr.cx]="ovalCoords.right.x"
                    [attr.cy]="ovalCoords.right.y"
                    [attr.rx]="ovalCoords.right.width / 2"
@@ -66,14 +66,14 @@
                 text-anchor="middle"
                 font-size="16"
                 font-weight="bold"
-                fill="#2196F3">U</text>
+                fill="#2196F3">L</text>
           
           <text [attr.x]="ovalCoords.right.x"
                 [attr.y]="ovalCoords.right.y - ovalCoords.right.height / 2 - 10"
                 text-anchor="middle"
                 font-size="16"
                 font-weight="bold"
-                fill="#4CAF50">V</text>
+                fill="#4CAF50">D</text>
         </ng-container>
       </ng-container>
       
@@ -95,39 +95,21 @@
       </g>
       
       <!-- Edges (arrows) -->
-      <ng-container *ngFor="let from of nodes; let i = index">
-        <ng-container *ngFor="let to of nodes; let j = index">
-          <ng-container *ngIf="inputVector[i * nodes.length + j] === '1'">
-            <!-- Петля (только для не-двудольных графов и когда есть рефлексивные отношения) -->
-            <ng-container *ngIf="i === j && !bipartiteLayout && hasReflexiveRelations">
-              <ng-container *ngIf="nodes.length === 2">
-                <!-- Квадратная петля для 0 (слева) -->
-                <path *ngIf="i === 0"
-                  [attr.d]="'M ' + (nodeCoords[0].x - 18) + ' ' + (nodeCoords[0].y + 6) + ' h -18 v -18 h 18'"
-                  stroke="#1976d2" stroke-width="3" fill="none" marker-end="url(#arrowSmall)" />
-                <!-- Квадратная петля для 1 (справа) -->
-                <path *ngIf="i === 1"
-                  [attr.d]="'M ' + (nodeCoords[1].x + 18) + ' ' + (nodeCoords[1].y - 6) + ' h 18 v 18 h -18'"
-                  stroke="#1976d2" stroke-width="3" fill="none" marker-end="url(#arrowSmall)" />
-              </ng-container>
-              <ng-container *ngIf="nodes.length !== 2">
-                <!-- Новая петля: выраженная, сбоку от круга -->
-                <path [attr.d]="getExpressiveLoopPath(nodeCoords[i].x, nodeCoords[i].y, i, nodes.length, 28)"
-                      stroke="#1976d2" stroke-width="3" fill="none" marker-end="url(#arrowSmall)" />
-              </ng-container>
-            </ng-container>
-            <!-- Обычная стрелка -->
-            <ng-container *ngIf="i !== j">
-              <line [attr.x1]="getEdgePoint(nodeCoords[i].x, nodeCoords[i].y, nodeCoords[j].x, nodeCoords[j].y, 18).x"
-                    [attr.y1]="getEdgePoint(nodeCoords[i].x, nodeCoords[i].y, nodeCoords[j].x, nodeCoords[j].y, 18).y"
-                    [attr.x2]="getEdgePoint(nodeCoords[j].x, nodeCoords[j].y, nodeCoords[i].x, nodeCoords[i].y, 18).x"
-                    [attr.y2]="getEdgePoint(nodeCoords[j].x, nodeCoords[j].y, nodeCoords[i].x, nodeCoords[i].y, 18).y"
-                    marker-end="url(#arrow)"
-                    [attr.stroke]="bipartiteLayout ? '#666' : '#1976d2'"
-                    stroke-width="2.5" />
-            </ng-container>
-          </ng-container>
+      <ng-container *ngFor="let e of edges">
+        <ng-container *ngIf="e.from !== e.to; else loopTpl">
+          <line [attr.x1]="getEdgePoint(nodeCoords[e.from].x, nodeCoords[e.from].y, nodeCoords[e.to].x, nodeCoords[e.to].y, 18).x"
+                [attr.y1]="getEdgePoint(nodeCoords[e.from].x, nodeCoords[e.from].y, nodeCoords[e.to].x, nodeCoords[e.to].y, 18).y"
+                [attr.x2]="getEdgePoint(nodeCoords[e.to].x, nodeCoords[e.to].y, nodeCoords[e.from].x, nodeCoords[e.from].y, 18).x"
+                [attr.y2]="getEdgePoint(nodeCoords[e.to].x, nodeCoords[e.to].y, nodeCoords[e.from].x, nodeCoords[e.from].y, 18).y"
+                marker-end="url(#arrow)"
+                [attr.stroke]="bipartiteLayout ? '#666' : '#1976d2'"
+                stroke-width="2.5" />
         </ng-container>
+        <ng-template #loopTpl>
+          <path *ngIf="!bipartiteLayout && hasReflexiveRelations"
+                [attr.d]="getExpressiveLoopPath(nodeCoords[e.from].x, nodeCoords[e.from].y, e.from, nodes.length, 28)"
+                stroke="#1976d2" stroke-width="3" fill="none" marker-end="url(#arrowSmall)" />
+        </ng-template>
       </ng-container>
       
       <!-- Текст поверх -->
@@ -194,11 +176,11 @@
         <div class="partition-label">Partitions:</div>
         <div class="partition-item">
           <span class="partition-color left-partition"></span>
-          <strong>U:</strong> {{ leftPartition.join(', ') }}
+          <strong>L:</strong> {{ leftPartition.join(', ') }}
         </div>
         <div class="partition-item">
           <span class="partition-color right-partition"></span>
-          <strong>V:</strong> {{ rightPartition.join(', ') }}
+          <strong>D:</strong> {{ rightPartition.join(', ') }}
         </div>
         <div class="bipartite-note">
           <small>Note: Self-loops are hidden for bipartite graphs</small>

@@ -25,6 +25,8 @@ export class VectorToGraphComponent {
     leftPartition: string[] = [];
     rightPartition: string[] = [];
     bipartiteLayout: boolean = false;
+    // Вертикальный расклад для прямоугольных матриц (верх = столбцы, низ = строки)
+    bipartiteVertical: boolean = false;
     // Разбиение по индексам вершин: 0 = левая доля (U), 1 = правая доля (V), -1 = неизвестно
     partitionByIndex: number[] = [];
     
@@ -43,6 +45,8 @@ export class VectorToGraphComponent {
     visibleNodeIndices: number[] = [];
     // Есть ли изолированные вершины в текущем графе
     hasIsolatedVertices: boolean = false;
+    // Список рёбер для отрисовки
+    edges: { from: number; to: number }[] = [];
 
     get Math() {
         return Math;
@@ -151,14 +155,10 @@ export class VectorToGraphComponent {
         if (shouldBeBipartite) {
             // Двудольный граф: отдельная нумерация для строк и столбцов
             const n = Math.max(1, Math.ceil(Math.log2(Math.max(this.rows, this.cols))));
-            // U: строки 0..rows-1
-            for (let i = 0; i < this.rows; i++) {
-                this.nodes.push(i.toString(2).padStart(n, '0'));
-            }
-            // V: столбцы 0..cols-1 (с тем же количеством бит)
-            for (let j = 0; j < this.cols; j++) {
-                this.nodes.push(j.toString(2).padStart(n, '0'));
-            }
+            // Для вертикального прямоугольного варианта сверху должны быть U (строки)
+            // поэтому всегда создаём [U(rows)..., V(cols)...]
+            for (let i = 0; i < this.rows; i++) this.nodes.push(i.toString(2).padStart(n, '0'));
+            for (let j = 0; j < this.cols; j++) this.nodes.push(j.toString(2).padStart(n, '0'));
         } else {
             // Обычный граф
             const maxIndex = Math.max(this.rows, this.cols);
@@ -216,12 +216,30 @@ export class VectorToGraphComponent {
         // Проверяем, является ли граф двудольным
         this.checkBipartite();
         
+        // Подстроим размер полотна под длину рядов для лучшей читаемости
+        this.adjustSvgSize();
+
         // Генерируем координаты в зависимости от типа графа
         this.generateCoordinates();
+        // Строим рёбра для отрисовки
+        this.buildEdges();
         // Рассчитываем видимые вершины с учётом hideIsolated
         this.computeVisibleNodes();
         
         this.showResult = true;
+    }
+
+    // Адаптация размера SVG для длинных прямоугольных матриц (делаем шире)
+    private adjustSvgSize() {
+        // Количество узлов в длинном ряду при текущем раскладе
+        const rowCount = this.rows;
+        const colCount = this.cols;
+        const longest = Math.max(rowCount, colCount);
+        // Базовый размер и шаг на каждый узел для читаемости
+        const base = 320;
+        const per = 70; // ширина на узел
+        // Минимум базовый, максимум зависит от самого длинного ряда
+        this.svgSize = Math.max(base, 140 + longest * per);
     }
 
     // Проверка двудольности графа
@@ -235,19 +253,36 @@ export class VectorToGraphComponent {
             // Двудольный граф
             this.isBipartite = true;
             this.bipartiteLayout = true;
+            this.bipartiteVertical = this.rows !== this.cols;
             
-            // Создаем разделение: первые rows вершин = U, следующие cols вершин = V
+            // Создаем разделение долей в соответствии с порядком узлов
+            // Квадратная: [U(rows)..., V(cols)...]
+            // Прямоугольная (вертикальная): [V(cols)..., U(rows)...]
             this.partitionByIndex = new Array(this.nodes.length).fill(-1);
             this.leftPartition = [];
             this.rightPartition = [];
-            for (let i = 0; i < this.rows; i++) {
-                this.partitionByIndex[i] = 0;
-                this.leftPartition.push(this.nodes[i]);
-            }
-            for (let j = 0; j < this.cols; j++) {
-                const idx = this.rows + j;
-                this.partitionByIndex[idx] = 1;
-                this.rightPartition.push(this.nodes[idx]);
+            if (this.bipartiteVertical) {
+                // верхние (первые) = U, нижние (последние) = V
+                for (let i = 0; i < this.rows; i++) {
+                    this.partitionByIndex[i] = 0; // U (верх)
+                    this.leftPartition.push(this.nodes[i]);
+                }
+                for (let j = 0; j < this.cols; j++) {
+                    const idx = this.rows + j;
+                    this.partitionByIndex[idx] = 1; // V (низ)
+                    this.rightPartition.push(this.nodes[idx]);
+                }
+            } else {
+                // классический порядок: U затем V
+                for (let i = 0; i < this.rows; i++) {
+                    this.partitionByIndex[i] = 0; // U
+                    this.leftPartition.push(this.nodes[i]);
+                }
+                for (let j = 0; j < this.cols; j++) {
+                    const idx = this.rows + j;
+                    this.partitionByIndex[idx] = 1; // V
+                    this.rightPartition.push(this.nodes[idx]);
+                }
             }
         } else {
             // Обычный граф
@@ -261,9 +296,11 @@ export class VectorToGraphComponent {
 
     // Определение, нужно ли создавать двудольный граф
     private shouldCreateBipartiteGraph(): boolean {
-        // Двудольный граф: квадратная матрица и в КАЖДОЙ строке ровно одна '1'
-        // (функциональное отображение строк → столбцы)
-        if (this.rows !== this.cols) return false;
+        // Прямоугольные матрицы 2^m × 2^(n-m) → вертикальный бипартитный граф
+        if (this.rows !== this.cols) {
+            return this.isPowerOfTwo(this.rows) && this.isPowerOfTwo(this.cols);
+        }
+        // Квадратные матрицы → бипартитный граф, если функция строк → столбцов
         if (this.rows === 1 && this.cols === 1) return false; // 1×1 не двудольный
         return this.isFunctionalRowMapping();
     }
@@ -352,6 +389,38 @@ export class VectorToGraphComponent {
         return matrix;
     }
 
+    // Формирование списка рёбер для отрисовки
+    private buildEdges() {
+        this.edges = [];
+        const shouldBeBip = this.shouldCreateBipartiteGraph();
+        if (shouldBeBip) {
+            // U (строки) сверху, V (столбцы) снизу; рёбра направлены сверху вниз
+            for (let i = 0; i < this.rows; i++) {
+                for (let j = 0; j < this.cols; j++) {
+                    const vectorIndex = i * this.cols + j;
+                    if (this.inputVector[vectorIndex] === '1') {
+                        const from = i; // U index in nodes
+                        const to = this.rows + j; // V index in nodes
+                        this.edges.push({ from, to });
+                    }
+                }
+            }
+        } else {
+            // Обычный граф: вершины 0..max-1, рёбра по матрице
+            const maxIndex = Math.max(this.rows, this.cols);
+            for (let i = 0; i < this.rows; i++) {
+                for (let j = 0; j < this.cols; j++) {
+                    const vectorIndex = i * this.cols + j;
+                    if (this.inputVector[vectorIndex] === '1') {
+                        const from = i % maxIndex;
+                        const to = j % maxIndex;
+                        this.edges.push({ from, to });
+                    }
+                }
+            }
+        }
+    }
+
     // Подсчёт изолированных вершин и формирование списка видимых
     public computeVisibleNodes() {
         // Строим неориентированную матрицу без петель, чтобы
@@ -394,8 +463,13 @@ export class VectorToGraphComponent {
         const N = this.nodes.length;
         
         if (this.bipartiteLayout) {
-            // Двудольный граф: две колонки
-            this.generateBipartiteCoordinates();
+            // Двудольный граф
+            if (this.bipartiteVertical) {
+                this.generateBipartiteVerticalCoordinates();
+            } else {
+                // две колонки
+                this.generateBipartiteCoordinates();
+            }
         } else if (N === 2) {
             // Для двух вершин — по горизонтали
             const y = this.svgSize / 2;
@@ -436,6 +510,31 @@ export class VectorToGraphComponent {
                 this.nodeCoords[i] = { x: rightX, y: rightStartY + rightPlaced * rightSpacing };
                 rightPlaced++;
             }
+        }
+    }
+
+    // Вертикальные координаты для прямоугольных матриц: верх = столбцы (V), низ = строки (U)
+    private generateBipartiteVerticalCoordinates() {
+        const N = this.nodes.length;
+        const topCount = this.rows;   // U сверху
+        const bottomCount = this.cols; // V снизу
+        const topY = this.svgSize * 0.28;
+        const bottomY = this.svgSize * 0.72;
+        const centerX = this.svgSize / 2;
+        const total = Math.max(topCount, bottomCount);
+        const xSpacing = this.svgSize * 0.6 / Math.max(total - 1, 1);
+        const topStartX = centerX - ((topCount - 1) * xSpacing) / 2;
+        const bottomStartX = centerX - ((bottomCount - 1) * xSpacing) / 2;
+
+        this.nodeCoords = new Array(N);
+        // Верхний ряд: U идут первыми в nodes
+        for (let i = 0; i < topCount; i++) {
+            this.nodeCoords[i] = { x: topStartX + i * xSpacing, y: topY };
+        }
+        // Нижний ряд: V идут после U
+        for (let j = 0; j < bottomCount; j++) {
+            const idx = topCount + j;
+            this.nodeCoords[idx] = { x: bottomStartX + j * xSpacing, y: bottomY };
         }
     }
 
@@ -512,24 +611,26 @@ export class VectorToGraphComponent {
         const rightPoints = this.nodeCoords.filter((_, i) => this.partitionByIndex[i] === 1);
         if (leftPoints.length === 0 || rightPoints.length === 0) return null;
         const paddingY = 40;
-        const width = 70;
+        const paddingX = 40;
         const leftMinY = Math.min(...leftPoints.map(p => p.y));
         const leftMaxY = Math.max(...leftPoints.map(p => p.y));
+        const leftMinX = Math.min(...leftPoints.map(p => p.x));
+        const leftMaxX = Math.max(...leftPoints.map(p => p.x));
         const rightMinY = Math.min(...rightPoints.map(p => p.y));
         const rightMaxY = Math.max(...rightPoints.map(p => p.y));
-        const leftX = leftPoints.reduce((s, p) => s + p.x, 0) / leftPoints.length;
-        const rightX = rightPoints.reduce((s, p) => s + p.x, 0) / rightPoints.length;
+        const rightMinX = Math.min(...rightPoints.map(p => p.x));
+        const rightMaxX = Math.max(...rightPoints.map(p => p.x));
         return {
             left: {
-                x: leftX,
+                x: (leftMinX + leftMaxX) / 2,
                 y: (leftMinY + leftMaxY) / 2,
-                width,
+                width: Math.max(leftMaxX - leftMinX + paddingX, 80),
                 height: Math.max(leftMaxY - leftMinY + paddingY, 80)
             },
             right: {
-                x: rightX,
+                x: (rightMinX + rightMaxX) / 2,
                 y: (rightMinY + rightMaxY) / 2,
-                width,
+                width: Math.max(rightMaxX - rightMinX + paddingX, 80),
                 height: Math.max(rightMaxY - rightMinY + paddingY, 80)
             }
         };
