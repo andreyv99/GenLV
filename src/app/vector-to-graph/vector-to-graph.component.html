@@ -33,52 +33,12 @@
   <div *ngIf="error" class="error-message">{{ error }}</div>
 
   <div *ngIf="showResult && !error"
-       class="result-container">
+       class="result-container"
+       [class.vertical-layout]="useVerticalLayout">
     
     <svg [attr.width]="svgSize"
          [attr.height]="svgSize">
       
-      <!-- Овальные контуры для разделов двудольного графа -->
-      <ng-container *ngIf="bipartiteLayout">
-        <ng-container *ngIf="getPartitionOvals() as ovalCoords">
-          <!-- Левая часть (раздел L) -->
-          <ellipse [attr.cx]="ovalCoords.left.x"
-                   [attr.cy]="ovalCoords.left.y"
-                   [attr.rx]="ovalCoords.left.width / 2"
-                   [attr.ry]="ovalCoords.left.height / 2"
-                   fill="none"
-                   stroke="#2196F3"
-                   stroke-width="2"
-                   stroke-dasharray="5,5"
-                   opacity="0.7" />
-          
-          <!-- Правая часть (раздел D) -->
-          <ellipse [attr.cx]="ovalCoords.right.x"
-                   [attr.cy]="ovalCoords.right.y"
-                   [attr.rx]="ovalCoords.right.width / 2"
-                   [attr.ry]="ovalCoords.right.height / 2"
-                   fill="none"
-                   stroke="#4CAF50"
-                   stroke-width="2"
-                   stroke-dasharray="5,5"
-                   opacity="0.7" />
-          
-          <!-- Подписи разделов -->
-          <text [attr.x]="ovalCoords.left.x"
-                [attr.y]="ovalCoords.left.y - ovalCoords.left.height / 2 - 10"
-                text-anchor="middle"
-                font-size="16"
-                font-weight="bold"
-                fill="#2196F3">L</text>
-          
-          <text [attr.x]="ovalCoords.right.x"
-                [attr.y]="ovalCoords.right.y - ovalCoords.right.height / 2 - 10"
-                text-anchor="middle"
-                font-size="16"
-                font-weight="bold"
-                fill="#4CAF50">D</text>
-        </ng-container>
-      </ng-container>
       
       <!-- Nodes (только круги) -->
       <g *ngFor="let idx of visibleNodeIndices; let _i = index">

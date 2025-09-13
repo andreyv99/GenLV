@@ -18,6 +18,7 @@ export class VectorToGraphComponent {
     nodes: string[] = [];
     nodeCoords: { x: number; y: number }[] = [];
     svgSize = 320;
+    useVerticalLayout = false; // флаг для вертикального расположения
     nodeColors = ['#e3f2fd', '#ffe0b2', '#c8e6c9', '#fff9c4', '#f8bbd9', '#d1c4e9', '#b2dfdb', '#f0f4c3'];
     
     // Новые свойства для двудольных графов
@@ -239,9 +240,13 @@ export class VectorToGraphComponent {
         const longest = Math.max(rowCount, colCount);
         // Базовый размер и шаг на каждый узел для читаемости
         const base = 320;
-        const per = 70; // ширина на узел
+        const per = 45; // уменьшили шаг на узел для меньших отступов
         // Минимум базовый, максимум зависит от самого длинного ряда
-        this.svgSize = Math.max(base, 140 + longest * per);
+        this.svgSize = Math.max(base, 100 + longest * per);
+        
+        // Определяем, нужен ли вертикальный макет на основе размера SVG
+        // Если SVG больше 600px, используем вертикальный макет
+        this.useVerticalLayout = this.svgSize > 600;
     }
 
     // Проверка двудольности графа
@@ -493,14 +498,19 @@ export class VectorToGraphComponent {
         const leftCount = this.partitionByIndex.filter(p => p === 0).length;
         const rightCount = this.partitionByIndex.filter(p => p === 1).length;
         
+        // Увеличиваем расстояние между узлами для больших графов
+        const minSpacing = 50; // минимальное расстояние между узлами
+        const maxSpacing = 80; // максимальное расстояние между узлами
+        const spacing = Math.min(maxSpacing, Math.max(minSpacing, this.svgSize * 0.4 / Math.max(Math.max(leftCount, rightCount) - 1, 1)));
+        
         // Левая колонка (раздел U)
         const leftX = this.svgSize * 0.2;
-        const leftSpacing = this.svgSize * 0.5 / Math.max(leftCount - 1, 1);
+        const leftSpacing = spacing;
         const leftStartY = (this.svgSize - (leftCount - 1) * leftSpacing) / 2;
         
         // Правая колонка (раздел V)
         const rightX = this.svgSize * 0.8;
-        const rightSpacing = this.svgSize * 0.5 / Math.max(rightCount - 1, 1);
+        const rightSpacing = spacing;
         const rightStartY = (this.svgSize - (rightCount - 1) * rightSpacing) / 2;
         
         this.nodeCoords = new Array(N);
@@ -526,7 +536,12 @@ export class VectorToGraphComponent {
         const bottomY = this.svgSize * 0.72;
         const centerX = this.svgSize / 2;
         const total = Math.max(topCount, bottomCount);
-        const xSpacing = this.svgSize * 0.6 / Math.max(total - 1, 1);
+        
+        // Увеличиваем расстояние между узлами для больших графов
+        const minSpacing = 50; // минимальное расстояние между узлами
+        const maxSpacing = 80; // максимальное расстояние между узлами
+        const xSpacing = Math.min(maxSpacing, Math.max(minSpacing, this.svgSize * 0.6 / Math.max(total - 1, 1)));
+        
         const topStartX = centerX - ((topCount - 1) * xSpacing) / 2;
         const bottomStartX = centerX - ((bottomCount - 1) * xSpacing) / 2;
 
