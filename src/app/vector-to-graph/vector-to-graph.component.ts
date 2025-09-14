@@ -304,14 +304,24 @@ export class VectorToGraphComponent {
 
     // Определение, нужно ли создавать двудольный граф
     private shouldCreateBipartiteGraph(): boolean {
+        // Если флаг forceBipartite выключен, пробуем обычный граф
+        if (!this.forceBipartite) {
+            // Для квадратных матриц проверяем функциональное отображение
+            if (this.rows === this.cols && this.rows > 1) {
+                return this.isFunctionalRowMapping();
+            }
+            // Для остальных случаев (включая прямоугольные) используем обычный граф
+            return false;
+        }
+        
+        // Если forceBipartite включен, применяем старую логику
         // Прямоугольные матрицы 2^m × 2^(n-m) → вертикальный бипартитный граф
         if (this.rows !== this.cols) {
             return this.isPowerOfTwo(this.rows) && this.isPowerOfTwo(this.cols);
         }
         // Квадратные: по переключателю или по правилу функционального отображения
         if (this.rows === 1 && this.cols === 1) return false; // 1×1 не двудольный
-        if (this.forceBipartite) return true;
-        return this.isFunctionalRowMapping();
+        return true; // forceBipartite включен для квадратных матриц
     }
 
     // Проверка: в каждой строке ровно одна '1'
