@@ -174,12 +174,7 @@ export class VectorToGraphComponent {
 
     // Определение, должен ли граф иметь рефлексивные отношения
     private shouldHaveReflexiveRelations(rows: number, cols: number): boolean {
-        // Бинарные графы (2×2) не имеют рефлексивных отношений
-        if (rows === 2 && cols === 2) {
-            return false;
-        }
-        
-        // Все остальные графы имеют рефлексивные отношения
+        // Включаем петли для всех размеров, включая 2×2
         return true;
     }
 
@@ -570,15 +565,18 @@ export class VectorToGraphComponent {
     // Координаты по кругу для обычных графов
     private generateCircularCoordinates() {
         const N = this.nodes.length;
-        const R = 100;
         const cx = this.svgSize / 2;
         const cy = this.svgSize / 2;
+        // Делаем радиус пропорциональным размеру SVG, чтобы граф заполнял полотно
+        // Оставляем небольшой внутренний отступ для подписей и стрелок
+        const padding = 60;
+        const R = Math.max(120, (this.svgSize / 2) - padding);
         
         this.nodeCoords = this.nodes.map((_, i) => {
-            const angle = (2 * Math.PI * i) / N - Math.PI / 2;
-            return { 
-                x: cx + R * Math.cos(angle), 
-                y: cy + R * Math.sin(angle) 
+            const angle = (2 * Math.PI * i) / Math.max(N, 1) - Math.PI / 2;
+            return {
+                x: cx + R * Math.cos(angle),
+                y: cy + R * Math.sin(angle)
             };
         });
     }
