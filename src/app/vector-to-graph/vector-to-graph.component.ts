@@ -17,6 +17,8 @@ export class VectorToGraphComponent {
     showResult: boolean = false;
     nodes: string[] = [];
     nodeCoords: { x: number; y: number }[] = [];
+    nodeRadius: number[] = [];
+    nodeInnerRadius: number[] = [];
     svgSize = 320;
     useVerticalLayout = false; // флаг для вертикального расположения
     nodeColors = ['#e3f2fd', '#ffe0b2', '#c8e6c9', '#fff9c4', '#f8bbd9', '#d1c4e9', '#b2dfdb', '#f0f4c3'];
@@ -61,10 +63,13 @@ export class VectorToGraphComponent {
         return index.toString(2).padStart(n, '0');
     }
 
-    // Унифицированный бинарный индекс (ширина = log2(max(rows, cols)))
-    getBinaryIndexUnified(index: number): string {
-        const maxSize = Math.max(this.rows, this.cols);
-        const n = Math.max(1, Math.ceil(Math.log2(maxSize)));
+    // Бинарные индексы для строк/столбцов отдельно, чтобы для 2 показывать 0/1
+    getBinaryIndexRow(index: number): string {
+        const n = Math.max(1, Math.ceil(Math.log2(this.rows)));
+        return index.toString(2).padStart(n, '0');
+    }
+    getBinaryIndexCol(index: number): string {
+        const n = Math.max(1, Math.ceil(Math.log2(this.cols)));
         return index.toString(2).padStart(n, '0');
     }
 
@@ -156,12 +161,14 @@ export class VectorToGraphComponent {
         const shouldBeBipartite = this.shouldCreateBipartiteGraph();
         
         if (shouldBeBipartite) {
-            // Двудольный граф: отдельная нумерация для строк и столбцов
-            const n = Math.max(1, Math.ceil(Math.log2(Math.max(this.rows, this.cols))));
-            // Для вертикального прямоугольного варианта сверху должны быть U (строки)
-            // поэтому всегда создаём [U(rows)..., V(cols)...]
-            for (let i = 0; i < this.rows; i++) this.nodes.push(i.toString(2).padStart(n, '0'));
-            for (let j = 0; j < this.cols; j++) this.nodes.push(j.toString(2).padStart(n, '0'));
+            // Двудольный граф: отдельная нумерация для строк (U) и столбцов (V)
+            const nMax = Math.max(1, Math.ceil(Math.log2(Math.max(this.rows, this.cols))));
+            // Если на стороне ровно 2 вершины, показываем 1-битные метки: '0', '1'
+            const nU = this.rows === 2 ? 1 : nMax;
+            const nV = this.cols === 2 ? 1 : nMax;
+            // Всегда создаём [U(rows)..., V(cols)...]
+            for (let i = 0; i < this.rows; i++) this.nodes.push(i.toString(2).padStart(nU, '0'));
+            for (let j = 0; j < this.cols; j++) this.nodes.push(j.toString(2).padStart(nV, '0'));
         } else {
             // Обычный граф
             const maxIndex = Math.max(this.rows, this.cols);
@@ -207,6 +214,8 @@ export class VectorToGraphComponent {
         
         // Генерируем имена вершин
         this.generateNodeLabels();
+        // Предвычисляем радиусы вершин под длину меток
+        this.computeNodeRadii();
         
         // Определяем, должен ли граф иметь рефлексивные отношения
         this.hasReflexiveRelations = this.shouldHaveReflexiveRelations(this.rows, this.cols);
@@ -589,6 +598,18 @@ export class VectorToGraphComponent {
         return this.bipartiteLayout && this.partitionByIndex[index] === 1;
     }
 
+    // Предвычисление радиусов узлов в зависимости от длины меток
+    private computeNodeRadii() {
+        const base = 16; // немного уменьшаем общий диаметр
+        this.nodeRadius = this.nodes.map(label => {
+            const len = (label ?? '').length;
+            const extra = Math.max(0, len - 2) * 2; // чуть меньше наращиваем радиус за символ
+            return Math.min(base + extra, 28);
+        });
+        // Делаем цветной круг (между внешним и белым) тоньше (примерно в 2 раза)
+        this.nodeInnerRadius = this.nodeRadius.map(r => Math.floor(r * 0.80));
+    }
+
     // Сброс результата при изменении inputVector
     ngOnInit() {}
     ngOnChanges() {
@@ -616,18 +637,39 @@ export class VectorToGraphComponent {
         };
     }
 
-    // SVG: выраженная петля сбоку от круга
-    getExpressiveLoopPath(x: number, y: number, idx: number, total: number, r: number = 28): string {
-        const angle = (2 * Math.PI * idx) / total - Math.PI / 2;
-        const startX = x + 18 * Math.cos(angle);
-        const startY = y + 18 * Math.sin(angle);
-        const perpAngle = angle - Math.PI / 2;
-        const c1x = startX + r * Math.cos(perpAngle);
-        const c1y = startY + r * Math.sin(perpAngle);
-        const c2x = startX + r * Math.cos(perpAngle + Math.PI / 3);
-        const c2y = startY + r * Math.sin(perpAngle + Math.PI / 3);
-        const endX = x + 18 * Math.cos(angle + 0.5);
-        const endY = y + 18 * Math.sin(angle + 0.5);
+    // SVG: выраженная петля сбоку от круга (круглее), при этом начало/конец остаются прежними
+    // Начало: точка на окружности с углом angle; Конец: точка на окружности с углом angle + 0.65
+    // Контрольные точки ставим по нормалям к окружности в начале и конце, на расстоянии baseR + r
+    getExpressiveLoopPath(
+        x: number,
+        y: number,
+        idx: number,
+        total: number,
+        r: number = 28,
+        baseR: number = 18
+    ): string {
+        // Небольшой поворот петли вокруг узла, чтобы не пересекать обод
+        const rotation = 0.25; // ~14°
+        const angle0 = (2 * Math.PI * idx) / Math.max(total, 1) - Math.PI / 2 + rotation;
+        const startX = x + baseR * Math.cos(angle0);
+        const startY = y + baseR * Math.sin(angle0);
+        // Длина дуги без изменений относительно новой стартовой точки
+        const endAngle = angle0 + 0.20;
+        const endX = x + baseR * Math.cos(endAngle);
+        const endY = y + baseR * Math.sin(endAngle);
+        // Нормали наружу в начальной и конечной точках
+        const perpStart = angle0 - Math.PI / 2;
+        const perpEnd = endAngle - Math.PI / 2;
+        // Делаем дугу шире: выносим контрольные точки дальше и чуть увеличиваем угловой развод
+        // Уже петля (ближе к узлу), но с более сильным угловым разводом
+        // Уже петля: контрольные точки ближе к узлу
+        const outDist1 = baseR + r * 1.15;
+        const outDist2 = baseR + r * 1.15;
+        const spread = 0.38; // ещё больше раскрываем по углу
+        const c1x = x + outDist1 * Math.cos(perpStart - spread);
+        const c1y = y + outDist1 * Math.sin(perpStart - spread);
+        const c2x = x + outDist2 * Math.cos(perpEnd + spread);
+        const c2y = y + outDist2 * Math.sin(perpEnd + spread);
         return `M${startX} ${startY} C${c1x} ${c1y},${c2x} ${c2y},${endX} ${endY}`;
     }
 

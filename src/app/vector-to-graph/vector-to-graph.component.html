@@ -45,14 +45,14 @@
         <ng-container *ngIf="nodes[idx] as node">
         <circle [attr.cx]="nodeCoords[idx].x"
                 [attr.cy]="nodeCoords[idx].y"
-                r="18"
+                [attr.r]="nodeRadius[idx]"
                 [attr.fill]="bipartiteLayout ? (isNodeLeft(idx) ? '#E3F2FD' : '#E8F5E8') : nodeColors[idx % nodeColors.length]"
                 [attr.stroke]="bipartiteLayout ? (isNodeLeft(idx) ? '#2196F3' : '#4CAF50') : '#1976d2'"
                 stroke-width="3" />
         <!-- Белый круг под текст -->
         <circle [attr.cx]="nodeCoords[idx].x"
                 [attr.cy]="nodeCoords[idx].y"
-                r="11"
+                [attr.r]="nodeInnerRadius[idx]"
                 fill="#fff" />
         </ng-container>
       </g>
@@ -60,17 +60,17 @@
       <!-- Edges (arrows) -->
       <ng-container *ngFor="let e of edges">
         <ng-container *ngIf="e.from !== e.to; else loopTpl">
-          <line [attr.x1]="getEdgePoint(nodeCoords[e.from].x, nodeCoords[e.from].y, nodeCoords[e.to].x, nodeCoords[e.to].y, 18).x"
-                [attr.y1]="getEdgePoint(nodeCoords[e.from].x, nodeCoords[e.from].y, nodeCoords[e.to].x, nodeCoords[e.to].y, 18).y"
-                [attr.x2]="getEdgePoint(nodeCoords[e.to].x, nodeCoords[e.to].y, nodeCoords[e.from].x, nodeCoords[e.from].y, 18).x"
-                [attr.y2]="getEdgePoint(nodeCoords[e.to].x, nodeCoords[e.to].y, nodeCoords[e.from].x, nodeCoords[e.from].y, 18).y"
+          <line [attr.x1]="getEdgePoint(nodeCoords[e.from].x, nodeCoords[e.from].y, nodeCoords[e.to].x, nodeCoords[e.to].y, nodeRadius[e.from]).x"
+                [attr.y1]="getEdgePoint(nodeCoords[e.from].x, nodeCoords[e.from].y, nodeCoords[e.to].x, nodeCoords[e.to].y, nodeRadius[e.from]).y"
+                [attr.x2]="getEdgePoint(nodeCoords[e.to].x, nodeCoords[e.to].y, nodeCoords[e.from].x, nodeCoords[e.from].y, nodeRadius[e.to]).x"
+                [attr.y2]="getEdgePoint(nodeCoords[e.to].x, nodeCoords[e.to].y, nodeCoords[e.from].x, nodeCoords[e.from].y, nodeRadius[e.to]).y"
                 marker-end="url(#arrow)"
                 [attr.stroke]="bipartiteLayout ? '#666' : '#1976d2'"
                 stroke-width="2.5" />
         </ng-container>
         <ng-template #loopTpl>
           <path *ngIf="!bipartiteLayout && hasReflexiveRelations"
-                [attr.d]="getExpressiveLoopPath(nodeCoords[e.from].x, nodeCoords[e.from].y, e.from, nodes.length, 28)"
+                [attr.d]="getExpressiveLoopPath(nodeCoords[e.from].x, nodeCoords[e.from].y, e.from, nodes.length, 28, nodeRadius[e.from])"
                 stroke="#1976d2" stroke-width="3" fill="none" marker-end="url(#arrowSmall)" />
         </ng-template>
       </ng-container>
@@ -104,10 +104,10 @@
         <table>
           <tr>
             <th>Row\Col</th>
-            <th *ngFor="let col of [].constructor(cols); let j = index">{{ getBinaryIndexUnified(j) }}</th>
+            <th *ngFor="let col of [].constructor(cols); let j = index">{{ getBinaryIndexCol(j) }}</th>
           </tr>
           <tr *ngFor="let row of [].constructor(rows); let i = index">
-            <td style="font-weight: bold;">{{ getBinaryIndexUnified(i) }}</td>
+            <td style="font-weight: bold;">{{ getBinaryIndexRow(i) }}</td>
             <td *ngFor="let col of [].constructor(cols); let j = index">
               {{ inputVector[i * cols + j] === '1' ? '1' : '' }}
             </td>
