@@ -4,7 +4,7 @@
   <div class="input-group">
     <div class="input-row">
       <label for="inputVector">Logical Vector:</label>
-      <input style="width: 400px;" [(ngModel)]="inputVector"
+      <input style="width: 500px;" [(ngModel)]="inputVector"
              placeholder="Enter logical vector (e.g., 0001, 0110, 0111, 1001, ...)"
              id="inputVector"
              (input)="onVectorChange()"
@@ -12,6 +12,7 @@
       <label style="margin-left: 12px;">
         <input type="checkbox" [(ngModel)]="forceBipartite" /> Bipartite layout
       </label>
+      
     </div>
     
     <div class="input-row" *ngIf="showSizeInputs">

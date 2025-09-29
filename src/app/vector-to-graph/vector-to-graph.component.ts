@@ -257,15 +257,15 @@ export class VectorToGraphComponent {
     private checkBipartite() {
         const N = this.nodes.length;
         
-        // Проверяем, нужен ли двудольный граф на основе структуры вектора
+        // Проверяем, нужен ли двудольный граф на основе структуры (прямоугольная/квадратная) и флага
         const shouldBeBipartite = this.shouldCreateBipartiteGraph();
         
         if (shouldBeBipartite) {
             // Двудольный граф
             this.isBipartite = true;
             this.bipartiteLayout = true;
-            // Вертикально для прямоугольных и для квадратных при принудительном режиме
-            this.bipartiteVertical = (this.rows !== this.cols) || this.forceBipartite;
+            // Всегда вертикально (сверху вниз) для двудольных графов
+            this.bipartiteVertical = true;
             
             // Создаем разделение долей в соответствии с порядком узлов
             // Квадратная: [U(rows)..., V(cols)...]
@@ -308,24 +308,16 @@ export class VectorToGraphComponent {
 
     // Определение, нужно ли создавать двудольный граф
     private shouldCreateBipartiteGraph(): boolean {
-        // Если флаг forceBipartite выключен, пробуем обычный граф
-        if (!this.forceBipartite) {
-            // Для квадратных матриц проверяем функциональное отображение
-            if (this.rows === this.cols && this.rows > 1) {
-                return this.isFunctionalRowMapping();
-            }
-            // Для остальных случаев (включая прямоугольные) используем обычный граф
-            return false;
-        }
-        
-        // Если forceBipartite включен, применяем старую логику
-        // Прямоугольные матрицы 2^m × 2^(n-m) → вертикальный бипартитный граф
+        // Прямоугольные матрицы: всегда двудольный граф
         if (this.rows !== this.cols) {
-            return this.isPowerOfTwo(this.rows) && this.isPowerOfTwo(this.cols);
+            return true;
         }
-        // Квадратные: по переключателю или по правилу функционального отображения
-        if (this.rows === 1 && this.cols === 1) return false; // 1×1 не двудольный
-        return true; // forceBipartite включен для квадратных матриц
+        // Квадратные матрицы: двудольный только если включен флаг forceBipartite
+        if (this.rows === this.cols) {
+            if (this.rows === 1 && this.cols === 1) return false; // 1×1 не двудольный
+            return this.forceBipartite;
+        }
+        return false;
     }
 
     // Проверка: в каждой строке ровно одна '1'
