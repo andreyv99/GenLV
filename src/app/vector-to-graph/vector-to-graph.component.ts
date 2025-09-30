@@ -57,6 +57,15 @@ export class VectorToGraphComponent {
         return Math;
     }
 
+    // Флаг: вектор образует квадратичную матрицу (длина — квадрат степени двойки)
+    get isSquareVector(): boolean {
+        const len = this.inputVector.length;
+        if (len === 0) return false;
+        if (!this.isPowerOfTwo(len)) return false;
+        const sqrt = Math.sqrt(len);
+        return Number.isInteger(sqrt);
+    }
+
     // Получение бинарного индекса для отображения в таблице
     getBinaryIndex(index: number, maxSize: number): string {
         const n = Math.max(1, Math.ceil(Math.log2(maxSize)));

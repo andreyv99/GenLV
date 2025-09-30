@@ -9,7 +9,7 @@
              id="inputVector"
              (input)="onVectorChange()"
              (keydown.enter)="onConvert()" />
-      <label style="margin-left: 12px;">
+      <label style="margin-left: 12px;" [class.show]="isSquareVector" class="bipartite">
         <input type="checkbox" [(ngModel)]="forceBipartite" /> Bipartite layout
       </label>
       
