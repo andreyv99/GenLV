@@ -171,10 +171,9 @@ export class VectorToGraphComponent {
         
         if (shouldBeBipartite) {
             // Двудольный граф: отдельная нумерация для строк (U) и столбцов (V)
-            const nMax = Math.max(1, Math.ceil(Math.log2(Math.max(this.rows, this.cols))));
-            // Если на стороне ровно 2 вершины, показываем 1-битные метки: '0', '1'
-            const nU = this.rows === 2 ? 1 : nMax;
-            const nV = this.cols === 2 ? 1 : nMax;
+            // Битовая длина рассчитывается независимо для каждой доли
+            const nU = Math.max(1, Math.ceil(Math.log2(this.rows)));
+            const nV = Math.max(1, Math.ceil(Math.log2(this.cols)));
             // Всегда создаём [U(rows)..., V(cols)...]
             for (let i = 0; i < this.rows; i++) this.nodes.push(i.toString(2).padStart(nU, '0'));
             for (let j = 0; j < this.cols; j++) this.nodes.push(j.toString(2).padStart(nV, '0'));
