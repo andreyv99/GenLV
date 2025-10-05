@@ -322,7 +322,6 @@ export class VectorToGraphComponent {
         }
         // Квадратные матрицы: двудольный только если включен флаг forceBipartite
         if (this.rows === this.cols) {
-            if (this.rows === 1 && this.cols === 1) return false; // 1×1 не двудольный
             return this.forceBipartite;
         }
         return false;
