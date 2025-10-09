@@ -57,6 +57,9 @@ export class VectorToGraphComponent {
         return Math;
     }
 
+    // Время создания графа в миллисекундах
+    graphCreationTime: number = 0;
+
     // Флаг: вектор образует квадратичную матрицу (длина — квадрат степени двойки)
     get isSquareVector(): boolean {
         const len = this.inputVector.length;
@@ -209,6 +212,9 @@ export class VectorToGraphComponent {
             return;
         }
         
+        // Начинаем измерение времени создания графа
+        const startTime = performance.now();
+        
         // Умное определение размеров матрицы
         this.determineMatrixSize(len);
         
@@ -240,6 +246,11 @@ export class VectorToGraphComponent {
         this.buildEdges();
         // Рассчитываем видимые вершины с учётом hideIsolated
         this.computeVisibleNodes();
+        
+        // Заканчиваем измерение времени
+        const endTime = performance.now();
+        console.log('Graph creation time:', endTime, startTime, endTime - startTime);
+        this.graphCreationTime = endTime - startTime;
         
         this.showResult = true;
     }

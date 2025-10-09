@@ -99,6 +99,14 @@
     <!-- Right side info -->
     <div class="right-panel">
       
+      <!-- Graph Creation Time -->
+      <div style="text-align: center; margin-bottom: 12px; padding: 8px; background-color: #e3f2fd; border-radius: 4px; font-size: 14px;">
+        <strong>Graph Creation Time:</strong> 
+        <span style="color: #1976d2; font-weight: bold;">
+          {{ graphCreationTime === 0 ? '< 0.001' : (Math.floor(graphCreationTime * 10000) / 10000) }} ms
+        </span>
+      </div>
+      
       <!-- Matrix Representation -->
       <div class="truth-table">
         <div style="font-weight: bold; margin-bottom: 8px; text-align: center;">Matrix Representation ({{rows}}×{{cols}})</div>
