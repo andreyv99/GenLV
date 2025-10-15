@@ -39,11 +39,12 @@
     <button (click)="addNewGate()">Add Gate</button>
 
     <p><button (click)="processAllCombinations()">Get Result</button></p>
-    <div *ngIf="resultVectors">
+    <div *ngIf="showResults && resultVectors">
       <strong>Result:</strong> {{ resultVectors }}
     </div>
 
-    <svg width="900"
+    <svg *ngIf="showResults"
+         width="900"
          height="500"
          style="background:#f9f9f9; margin: 20px 0;">
       <g [attr.transform]="svgTranslate"><!-- Центрирование схемы по вертикали -->
@@ -162,7 +163,7 @@
       </g>
     </svg>
 
-    <div *ngIf="truthTableRows.length"
+    <div *ngIf="showResults && truthTableRows.length"
          style="margin-top: 32px; overflow-x: auto;">
       <table style="border-collapse: collapse; margin: 0 auto; background: #f8fafd;">
         <thead>

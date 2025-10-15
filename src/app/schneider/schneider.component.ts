@@ -44,6 +44,8 @@ export class SchneiderComponent {
   sideImageUrl: string | null = null;
 
   truthTableRows: Array<{ inputs: number[], gateResults: Record<number, number>, output: number }> = [];
+  
+  showResults: boolean = false; // Флаг для отображения результатов
 
   constructor() {
     this.addInitialGates();
@@ -91,6 +93,7 @@ export class SchneiderComponent {
     };
     this.gates.push(newGate);
     this.nextSignalId = Math.max(this.nextSignalId, output + 1);
+    this.showResults = false; // Скрываем результаты при изменении схемы
   }
 
   addNewGate(): void {
@@ -110,6 +113,7 @@ export class SchneiderComponent {
     this.connections = this.connections.filter(
       (connection) => connection.fromGate !== id && connection.toGate !== id
     );
+    this.showResults = false; // Скрываем результаты при изменении схемы
   }
 
   addConnection(fromGate: number, toGate: number, toInputIndex: number): void {
@@ -172,6 +176,7 @@ export class SchneiderComponent {
         return output;
       })
       .join('');
+    this.showResults = true; // Показываем результаты после вычисления
   }
 
   processCircuit(inputArray: number[]): number {

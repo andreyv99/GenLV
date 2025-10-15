@@ -1,5 +1,5 @@
 <div class="container">
-  <h2>Logical Vector to Graph</h2>
+  <h1>Logical Vector to Graph</h1>
   
   <div class="input-group">
     <div class="input-row">
@@ -100,23 +100,23 @@
     <div class="right-panel">
       
       <!-- Graph Creation Time -->
-      <div style="text-align: center; margin-bottom: 12px; padding: 8px; background-color: #e3f2fd; border-radius: 4px; font-size: 14px;">
-        <strong>Graph Creation Time:</strong> 
-        <span style="color: #1976d2; font-weight: bold;">
+      <div style="text-align: center; margin-bottom: 6px; padding: 4px; background-color: #e3f2fd; border-radius: 2px; font-size: 12px;">
+        Graph Creation Time: 
+        <span style="color: #1976d2;">
           {{ graphCreationTime === 0 ? '< 0.001' : (Math.floor(graphCreationTime * 10000) / 10000) }} ms
         </span>
       </div>
       
       <!-- Matrix Representation -->
       <div class="truth-table">
-        <div style="font-weight: bold; margin-bottom: 8px; text-align: center;">Matrix Representation ({{rows}}×{{cols}})</div>
+        <div style="margin-bottom: 4px; text-align: center; font-size: 12px;">Matrix Representation ({{rows}}×{{cols}})</div>
         <table>
           <tr>
             <th>Row\Col</th>
             <th *ngFor="let col of [].constructor(cols); let j = index">{{ getBinaryIndexCol(j) }}</th>
           </tr>
           <tr *ngFor="let row of [].constructor(rows); let i = index">
-            <td style="font-weight: bold;">{{ getBinaryIndexRow(i) }}</td>
+            <td style="font-size: 12px;">{{ getBinaryIndexRow(i) }}</td>
             <td *ngFor="let col of [].constructor(cols); let j = index">
               {{ inputVector[i * cols + j] === '1' ? '1' : '' }}
             </td>
@@ -148,11 +148,11 @@
         <div class="partition-label">Partitions:</div>
         <div class="partition-item">
           <span class="partition-color left-partition"></span>
-          <strong>L:</strong> {{ leftPartition.join(', ') }}
+          L: {{ leftPartition.join(', ') }}
         </div>
         <div class="partition-item">
           <span class="partition-color right-partition"></span>
-          <strong>V:</strong> {{ rightPartition.join(', ') }}
+          V: {{ rightPartition.join(', ') }}
         </div>
         <div class="bipartite-note">
           <small>Note: Self-loops are hidden for bipartite graphs</small>
