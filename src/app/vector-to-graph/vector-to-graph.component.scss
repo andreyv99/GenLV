@@ -21,8 +21,8 @@
 .container h1 {
   // color: #1976d2;
   // text-align: center;
-  // margin-bottom: 12px;
-  font-size: 1.5rem;
+  margin-bottom: 5px;
+  font-size: 1.2rem;
   // font-weight: normal;
 }
 
@@ -123,6 +123,7 @@ button {
   transition: background-color 0.3s;
   font-weight: normal;
   border-radius: 5px;
+  margin: 5px 0;
 }
 
 button:hover {
