@@ -14,6 +14,10 @@ const routes: Routes = [
         path: 'vector-to-graph',
         loadComponent: () => import('./vector-to-graph/vector-to-graph.component').then(m => m.VectorToGraphComponent)
     },
+    {
+        path: 'test-map',
+        loadComponent: () => import('./test-map/test-map.component').then(m => m.TestMapComponent)
+    },
     { path: '', redirectTo: 'genlv', pathMatch: 'full' }
 ];
 

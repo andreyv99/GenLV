@@ -1,0 +1,36 @@
+<div class="test-map-container">
+  <h2>Vector Logic Test Map Generator</h2>
+  
+  <div class="input-section">
+    <label for="vectorInput">Enter Logic Vector (binary string):</label>
+    <div class="input-group">
+      <input 
+        id="vectorInput" 
+        type="text" 
+        [(ngModel)]="vectorInput" 
+        placeholder="e.g. 11100111" 
+        (keyup.enter)="calculateTestMap()"
+      />
+      <button (click)="calculateTestMap()">Calculate Test Map</button>
+    </div>
+  </div>
+
+  <div class="result-section" *ngIf="testMap.length > 0">
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>T \ F</th>
+            <th *ngFor="let f of faultAxes">{{ f }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of testMap; let i = index">
+            <th class="test-set-col">{{ testSets[i] }}</th>
+            <td *ngFor="let cell of row">{{ cell }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
