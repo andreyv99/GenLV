@@ -15,7 +15,7 @@ const routes: Routes = [
         loadComponent: () => import('./vector-to-graph/vector-to-graph.component').then(m => m.VectorToGraphComponent)
     },
     {
-        path: 'test-map',
+        path: 'mosi-logic',
         loadComponent: () => import('./test-map/test-map.component').then(m => m.TestMapComponent)
     },
     { path: '', redirectTo: 'genlv', pathMatch: 'full' }
@@ -25,4 +25,4 @@ const routes: Routes = [
     imports: [RouterModule.forRoot(routes)],
     exports: [RouterModule]
 })
-export class AppRoutingModule {}
+export class AppRoutingModule { }

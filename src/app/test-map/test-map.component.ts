@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 @Component({
-  selector: 'app-test-map',
+  selector: 'app-mosi-logic',
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './test-map.component.html',
@@ -21,7 +21,7 @@ export class TestMapComponent {
   vBits: number[] = [];
   decAxes: number[] = [];
 
-  constructor() {}
+  constructor() { }
 
   calculateTestMap() {
     this.testMap = [];
@@ -41,7 +41,7 @@ export class TestMapComponent {
 
     const v = vStr.split('').map(bit => parseInt(bit, 10));
     const n_len = v.length;
-    
+
     if ((n_len & (n_len - 1)) !== 0 || n_len === 0) {
       alert('The length of the vector must be a power of 2 (e.g., 2, 4, 8, 16).');
       return;
